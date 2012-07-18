@@ -43,7 +43,7 @@ class ball(Sprite):
         self.rect = self.rect.move(init_position)
         self.isgrounded = True
 
-    def update(self, real_ground):
+    def update(self, ground_rects):
         """Updates ball position and checks for obstacles"""
         
         #Horizontal Movement
@@ -53,11 +53,14 @@ class ball(Sprite):
         else:
         	if self.speed_x > 0: self.speed_x -= MOVEMENT_SPEED_INCREMENT
         	elif self.speed_x < 0: self.speed_x += MOVEMENT_SPEED_INCREMENT
+       
+        tmp_rect = self.rect 	
+        self.rect = self.rect.move(self.speed_x, 0)
+        for rect in ground_rects:
+            if self.rect.colliderect(rect):
+                self.rect = tmp_rect
+                break
         	
-        
-        	
-        if self.rect.bottom < real_ground[self.rect.left+5] and self.rect.bottom < real_ground[self.rect.right-5]:
-            self.isgrounded = False
         
         #Vertical Movement	
         if self.isjumping == True:
@@ -67,14 +70,17 @@ class ball(Sprite):
         if self.isgrounded == False:
             self.speed_y -= BALANAR_GRAVITY
  				
-        self.rect = self.rect.move(self.speed_x, -self.speed_y)
         
-        #Stops the jump routine only at the ground
-        if self.rect.bottom > real_ground[self.rect.centerx]:
-            self.rect.bottom = real_ground[self.rect.centerx] 
-            self.isjumping = False
-            self.isgrounded = True
-            self.speed_y = 0
+        tmp_rect = self.rect 	
+        self.rect = self.rect.move(0, -self.speed_y)
+        for rect in ground_rects:
+            if self.rect.colliderect(rect):
+                self.isgrounded = True
+                self.isjumping = False
+                self.rect = tmp_rect
+                break
+            else:
+                self.isgrounded = False
 
     def blitme(self, screen):
         self.screen.blit(self.image, self.rect.topleft)
@@ -101,17 +107,15 @@ def EventHandler(balanar):
            	if event.key == K_RIGHT:
            		balanar.movement_force = 0
 
-def blit_ground (screen, ground):
+def blit_ground (screen, ground_rects):    
+    for rect in ground_rects:
+        pygame.draw.rect(screen, GROUND_COLOUR, rect)
+                
+def create_ground_rects(ground, ground_rects):
     count = 0
     for i in ground:
-        tmp_rect = pygame.Rect(count*80, SCREEN_HEIGHT - i*50, 80, i*50)
-        pygame.draw.rect(screen, GROUND_COLOUR, tmp_rect)
+        ground_rects.append(pygame.Rect(count*80, SCREEN_HEIGHT - i*50, 80, i*50))
         count = count+1
-        
-def calc_real_ground (ground, real_ground):
-    for i in ground:
-        for j in range(0, 80):
-            real_ground.append(SCREEN_HEIGHT - i*50)
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -132,11 +136,11 @@ def game():
     balanar = ball(screen, img_filename, (0,SCREEN_HEIGHT-50), (0,0))
     
     ground = [1,2,1,4,4,4,3,3,2,1]
-    real_ground = []
+    ground_rects = []
     
     running = True
     
-    calc_real_ground(ground, real_ground) 
+    create_ground_rects(ground, ground_rects) 
 
     #-----------------------------The Game Loop---------------------------
     while running:
@@ -146,15 +150,14 @@ def game():
         #Event Handler
         EventHandler(balanar)
 
-        #Update all objects    
-             
-        balanar.update(real_ground)
+        #Update all objects              
+        balanar.update(ground_rects)
 
         #Fill background colour
         screen.fill(BG_COLOUR)
 
         #Blit all objects to screen
-        blit_ground(screen, ground)
+        blit_ground(screen, ground_rects)
         balanar.blitme(screen)
 
         #Flip the display buffer
