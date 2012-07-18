@@ -41,6 +41,7 @@ class ball(Sprite):
         #Pull Balanar back onto the screen
         init_position = tuple(map(operator.add, init_position, (0, -self.rect.height)))
         self.rect = self.rect.move(init_position)
+        self.rect.inflate(-5, -5)
         self.isgrounded = True
 
     def update(self, ground_rects):
@@ -54,11 +55,13 @@ class ball(Sprite):
         	if self.speed_x > 0: self.speed_x -= MOVEMENT_SPEED_INCREMENT
         	elif self.speed_x < 0: self.speed_x += MOVEMENT_SPEED_INCREMENT
        
-        tmp_rect = self.rect 	
         self.rect = self.rect.move(self.speed_x, 0)
         for rect in ground_rects:
             if self.rect.colliderect(rect):
-                self.rect = tmp_rect
+                if self.speed_x > 0:
+                    self.rect.right = rect.left
+                elif self.speed_x < 0:
+                    self.rect.left = rect.right
                 break
         	
         
@@ -70,14 +73,13 @@ class ball(Sprite):
         if self.isgrounded == False:
             self.speed_y -= BALANAR_GRAVITY
  				
-        
-        tmp_rect = self.rect 	
+        	
         self.rect = self.rect.move(0, -self.speed_y)
         for rect in ground_rects:
             if self.rect.colliderect(rect):
                 self.isgrounded = True
                 self.isjumping = False
-                self.rect = tmp_rect
+                self.rect.bottom = rect.top
                 break
             else:
                 self.isgrounded = False
