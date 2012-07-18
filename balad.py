@@ -63,7 +63,7 @@ class ball(Sprite):
                 elif self.speed_x < 0:
                     self.rect.left = rect.right
                 break
-        	
+        	#######################
         
         #Vertical Movement	
         if self.isjumping == True:
