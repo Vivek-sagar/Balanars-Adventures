@@ -49,7 +49,7 @@ class ball(Sprite):
         
         #Horizontal Movement
         if self.movement_force != 0:
-        	if self.speed_x <= BALANAR_MAX_SPEED: 
+        	if abs(self.speed_x) <= BALANAR_MAX_SPEED: 
         		self.speed_x += MOVEMENT_SPEED_INCREMENT * self.movement_force
         else:
         	if self.speed_x > 0: self.speed_x -= MOVEMENT_SPEED_INCREMENT
@@ -116,6 +116,7 @@ def create_ground_rects(ground, ground_rects):
     #ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
     for i in ground:
+    #TODO- Too many hardcoded values!
         ground_rects.append(pygame.Rect(count*80, SCREEN_HEIGHT - i*50, 80, i*50))
         count = count+1
         
@@ -137,7 +138,12 @@ def game():
     
     balanar = ball(screen, img_filename, (0,SCREEN_HEIGHT-50), (0,0))
     
-    ground = [1,2,1,4,4,4,3,3,2,1]
+    filestream = open('level', 'r')
+    
+    ground = []
+    for i in range(0,10):
+        ground.append(int(filestream.read(1)))
+    
     ground_rects = []
     
     running = True
@@ -166,5 +172,7 @@ def game():
 
         #Flip the display buffer
         pygame.display.flip()
+        
+    filestream.close
 
 game()
