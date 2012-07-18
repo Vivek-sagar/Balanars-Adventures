@@ -14,10 +14,10 @@ import operator
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 400
 GROUND_COLOUR = (25, 50, 25)
 
-MOVEMENT_SPEED_INCREMENT = 0.5
+MOVEMENT_SPEED_INCREMENT = 1.5
 BALANAR_MAX_SPEED = 10
-BALANAR_JUMP_SPEED = 10
-BALANAR_GRAVITY = 0.5
+BALANAR_JUMP_SPEED = 20
+BALANAR_GRAVITY = 1.5
 
 #------------------------------------------------------------------------
 # Class Definitions
@@ -63,7 +63,6 @@ class ball(Sprite):
                 elif self.speed_x < 0:
                     self.rect.left = rect.right
                 break
-        	#######################
         
         #Vertical Movement	
         if self.isjumping == True:
@@ -114,6 +113,7 @@ def blit_ground (screen, ground_rects):
         pygame.draw.rect(screen, GROUND_COLOUR, rect)
                 
 def create_ground_rects(ground, ground_rects):
+    #ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
     for i in ground:
         ground_rects.append(pygame.Rect(count*80, SCREEN_HEIGHT - i*50, 80, i*50))
@@ -142,17 +142,19 @@ def game():
     
     running = True
     
-    create_ground_rects(ground, ground_rects) 
+     
 
     #-----------------------------The Game Loop---------------------------
     while running:
         #Delay
-        pygame.time.wait(20)
+        pygame.time.wait(30)
 
         #Event Handler
         EventHandler(balanar)
 
-        #Update all objects              
+        #Update all objects 
+        ground_rects = [] 
+        create_ground_rects(ground, ground_rects)            
         balanar.update(ground_rects)
 
         #Fill background colour
