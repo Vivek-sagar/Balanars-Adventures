@@ -89,13 +89,15 @@ class ball(Sprite):
 #-------------------------------------------------------------------------
 # Event Handler
 #-------------------------------------------------------------------------
-def EventHandler(balanar):
+def EventHandler(balanar, move_screen):
     for event in pygame.event.get():
     	if event.type == pygame.QUIT:
         	pygame.quit()
         if event.type == KEYDOWN:
         	if event.key == K_q:
         		pygame.quit()
+        	if event.key == K_DOWN:
+        	    move_screen = True
            	if event.key == K_LEFT:
            		balanar.movement_force = -1
            	if event.key == K_RIGHT:
@@ -111,13 +113,25 @@ def EventHandler(balanar):
 def blit_ground (screen, ground_rects):    
     for rect in ground_rects:
         pygame.draw.rect(screen, GROUND_COLOUR, rect)
+        
+def screen_offset_calc():
+    num = 0
+    while (num < SCREEN_WIDTH):
+        num = num + 1
+        yield num
                 
-def create_ground_rects(ground, ground_rects):
+def create_ground_rects(ground, ground_rects, move_screen):
     #ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
-    for i in ground:
+    offset = 0
+    if move_screen == True:
+        print 'hi'
+        offset = screen_offset_calc()
+        if offset == SCREEN_WIDTH:
+            move_screen = False
+    for i in range(0,20):
     #TODO- Too many hardcoded values!
-        ground_rects.append(pygame.Rect(count*80, SCREEN_HEIGHT - i*50, 80, i*50))
+        ground_rects.append(pygame.Rect(count*80-offset, SCREEN_HEIGHT - ground[i]*50, 80, ground[i]*50))
         count = count+1
         
 #-------------------------------------------------------------------------
@@ -136,13 +150,17 @@ def game():
     screen = pygame.display.set_mode ((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
     clock = pygame.time.Clock()
     
+    move_screen = True
+    
     balanar = ball(screen, img_filename, (0,SCREEN_HEIGHT-50), (0,0))
     
     filestream = open('level', 'r')
     
     ground = []
-    for i in range(0,10):
-        ground.append(int(filestream.read(1)))
+    x = filestream.read(1)
+    while x != '':
+        ground.append(int(x))
+        x = filestream.read(1)
     
     ground_rects = []
     
@@ -156,11 +174,11 @@ def game():
         pygame.time.wait(30)
 
         #Event Handler
-        EventHandler(balanar)
+        EventHandler(balanar, move_screen)
 
         #Update all objects 
         ground_rects = [] 
-        create_ground_rects(ground, ground_rects)            
+        create_ground_rects(ground, ground_rects, move_screen)            
         balanar.update(ground_rects)
 
         #Fill background colour
