@@ -109,30 +109,32 @@ def EventHandler(balanar, move_screen):
            		balanar.movement_force = 0
            	if event.key == K_RIGHT:
            		balanar.movement_force = 0
+    return move_screen
 
 def blit_ground (screen, ground_rects):    
     for rect in ground_rects:
         pygame.draw.rect(screen, GROUND_COLOUR, rect)
         
-def screen_offset_calc():
+def animation_offset_calc():
     num = 0
-    while (num < SCREEN_WIDTH):
-        num = num + 1
+    while (1):
+        num = num + 10
         yield num
+        
                 
-def create_ground_rects(ground, ground_rects, move_screen):
+def create_ground_rects(ground, ground_rects, move_screen, animation_offset_calc):
     #ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
-    offset = 0
+    animation_offset = 0
     if move_screen == True:
-        print 'hi'
-        offset = screen_offset_calc()
-        if offset == SCREEN_WIDTH:
+        animation_offset = animation_offset_calc.next()
+        if animation_offset >= SCREEN_WIDTH:
             move_screen = False
     for i in range(0,20):
     #TODO- Too many hardcoded values!
-        ground_rects.append(pygame.Rect(count*80-offset, SCREEN_HEIGHT - ground[i]*50, 80, ground[i]*50))
+        ground_rects.append(pygame.Rect(count*80-(animation_offset), SCREEN_HEIGHT - ground[i]*50, 80, ground[i]*50))
         count = count+1
+    return move_screen
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -150,7 +152,7 @@ def game():
     screen = pygame.display.set_mode ((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
     clock = pygame.time.Clock()
     
-    move_screen = True
+    move_screen = False
     
     balanar = ball(screen, img_filename, (0,SCREEN_HEIGHT-50), (0,0))
     
@@ -164,6 +166,8 @@ def game():
     
     ground_rects = []
     
+    func = animation_offset_calc()
+    
     running = True
     
      
@@ -174,11 +178,11 @@ def game():
         pygame.time.wait(30)
 
         #Event Handler
-        EventHandler(balanar, move_screen)
+        move_screen = EventHandler(balanar, move_screen) #Has to return a value because move_screen is an immutable datatype and so, wont be changed in EventHandler 
 
         #Update all objects 
         ground_rects = [] 
-        create_ground_rects(ground, ground_rects, move_screen)            
+        move_screen = create_ground_rects(ground, ground_rects, move_screen, func)            
         balanar.update(ground_rects)
 
         #Fill background colour
