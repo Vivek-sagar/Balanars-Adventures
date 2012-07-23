@@ -30,8 +30,8 @@ class ball(Sprite):
     isjumping = False
 
     def __init__(self, screen, img_filename, init_position, speed):
-
         """Initialise the ball"""
+        
         Sprite.__init__(self)
         self.screen = screen
         self.speed_x, self.speed_y = speed
@@ -45,7 +45,7 @@ class ball(Sprite):
         self.isgrounded = True
 
     def update(self, current_ground_rects):
-        """Updates ball position and checks for obstacles"""
+        """Updates ball position. Checks for obstacles, causes jumping and allows for falling off edges"""
         
         #Horizontal Movement
         if self.movement_force != 0:
@@ -90,6 +90,7 @@ class ball(Sprite):
 # Event Handler
 #-------------------------------------------------------------------------
 def EventHandler(balanar, move_screen):
+    """Keyboard input handler"""
     for event in pygame.event.get():
     	if event.type == pygame.QUIT:
         	pygame.quit()
@@ -111,11 +112,13 @@ def EventHandler(balanar, move_screen):
            		balanar.movement_force = 0
     return move_screen
 
-def blit_ground (screen, current_ground_rects):    
+def blit_ground (screen, current_ground_rects):
+    """ Blits the ground based on current_ground_rects"""    
     for rect in current_ground_rects:
         pygame.draw.rect(screen, GROUND_COLOUR, rect)
         
 def animation_offset_calc():
+    """Number iterating generator function. For screen movement"""
     num = 0
     while (1):
         num = num + 10
@@ -138,7 +141,6 @@ def move_screen_func(animation_offset_calc, move_screen, screen_offset):
     animation_offset = 0
     if move_screen == True:
         animation_offset = animation_offset_calc.next()
-        print animation_offset
         if animation_offset >= SCREEN_WIDTH:
             move_screen = False
             animation_offset = 0
@@ -188,7 +190,7 @@ def game():
     #-----------------------------The Game Loop---------------------------
     while running:
         #Delay
-        pygame.time.wait(30)
+        pygame.time.wait(15)
 
         #Event Handler
         move_screen = EventHandler(balanar, move_screen) #Has to return a value because move_screen is an immutable datatype and so, wont be changed in EventHandler 
