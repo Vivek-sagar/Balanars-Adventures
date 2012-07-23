@@ -18,9 +18,12 @@ MOVEMENT_SPEED_INCREMENT = 1.5
 BALANAR_MAX_SPEED = 10
 BALANAR_JUMP_SPEED = 20
 BALANAR_GRAVITY = 1.5
+SCREEN_PAN_SPEED = 30
+SCREEN_PAN_ZONE = 50
 
-global offset_count    #Meant for the screen movement. Bad naming i know :/
+global offset_count     #Meant for the screen movement. Bad naming i know :/
 offset_count = 0
+global move_screen      #Flag to be set if the screen must be panned
 #------------------------------------------------------------------------
 # Class Definitions
 #------------------------------------------------------------------------
@@ -49,6 +52,7 @@ class ball(Sprite):
     def update(self, current_ground_rects):
         """Updates ball position. Checks for obstacles, causes jumping and allows for falling off edges"""
         
+        global move_screen
         #Horizontal Movement
         if self.movement_force != 0:
         	if abs(self.speed_x) <= BALANAR_MAX_SPEED: 
@@ -65,6 +69,14 @@ class ball(Sprite):
                 elif self.speed_x < 0:
                     self.rect.left = rect.right
                 break
+              
+        if move_screen == True:
+            self.rect = self.rect.move(-SCREEN_PAN_SPEED, 0)  
+            
+        if self.rect.right >= SCREEN_WIDTH-SCREEN_PAN_ZONE:
+            move_screen = True
+        
+        
         
         #Vertical Movement	
         if self.isjumping == True:
@@ -91,8 +103,9 @@ class ball(Sprite):
 #-------------------------------------------------------------------------
 # Event Handler
 #-------------------------------------------------------------------------
-def EventHandler(balanar, move_screen):
+def EventHandler(balanar):
     """Keyboard input handler"""
+    global move_screen
     for event in pygame.event.get():
     	if event.type == pygame.QUIT:
         	pygame.quit()
@@ -112,7 +125,6 @@ def EventHandler(balanar, move_screen):
            		balanar.movement_force = 0
            	if event.key == K_RIGHT:
            		balanar.movement_force = 0
-    return move_screen
 
 def blit_ground (screen, current_ground_rects):
     """ Blits the ground based on current_ground_rects"""    
@@ -123,7 +135,7 @@ def animation_offset_calc():
     """Number iterating generator function. For screen movement"""
     num = 0
     while (1):
-        num = num + 10
+        num = num + SCREEN_PAN_SPEED
         yield num
         #if num >= SCREEN_WIDTH: #must be the same as the condition in move_screen_func()
         #    num = 0
@@ -138,18 +150,19 @@ def create_ground_rects(ground, current_ground_rects, screen_offset):
         current_ground_rects.append(pygame.Rect(count*80-(screen_offset), SCREEN_HEIGHT - ground[i]*50, 80, ground[i]*50))
         count = count+1
     
-def move_screen_func(animation_offset_calc, move_screen, screen_offset):
+def move_screen_func(animation_offset_calc, screen_offset):
     """Function to pan the screen over to the next or previous screen"""
+    global move_screen
     screen_offset = 0
     global offset_count
     if move_screen == True:
         screen_offset = animation_offset_calc.next()
-        offset_count = offset_count+10
+        offset_count = offset_count+SCREEN_PAN_SPEED
         print offset_count
-        if offset_count >= SCREEN_WIDTH:
+        if offset_count >= SCREEN_WIDTH-SCREEN_PAN_ZONE:
             move_screen = False
             offset_count = 0
-    return move_screen, screen_offset
+    return screen_offset
             
         
 #-------------------------------------------------------------------------
@@ -168,6 +181,7 @@ def game():
     screen = pygame.display.set_mode ((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
     clock = pygame.time.Clock()
     
+    global move_screen
     move_screen = False
     
     balanar = ball(screen, img_filename, (0,SCREEN_HEIGHT-50), (0,0))
@@ -199,12 +213,12 @@ def game():
         pygame.time.wait(15)
 
         #Event Handler
-        move_screen = EventHandler(balanar, move_screen) #Has to return a value because move_screen is an immutable datatype and so, wont be changed in EventHandler 
+        EventHandler(balanar) #Has to return a value because move_screen is an immutable datatype and so, wont be changed in EventHandler 
 
         #Update all objects 
         current_ground_rects = [] 
         if move_screen == True:
-            move_screen, screen_offset = move_screen_func(func, move_screen, screen_offset)
+            screen_offset = move_screen_func(func, screen_offset)
         create_ground_rects(ground, current_ground_rects, screen_offset)
             
         balanar.update(current_ground_rects)
