@@ -44,7 +44,7 @@ class ball(Sprite):
         self.rect.inflate(-5, -5)
         self.isgrounded = True
 
-    def update(self, ground_rects):
+    def update(self, current_ground_rects):
         """Updates ball position and checks for obstacles"""
         
         #Horizontal Movement
@@ -56,7 +56,7 @@ class ball(Sprite):
         	elif self.speed_x < 0: self.speed_x += MOVEMENT_SPEED_INCREMENT
        
         self.rect = self.rect.move(self.speed_x, 0)
-        for rect in ground_rects:
+        for rect in current_ground_rects:
             if self.rect.colliderect(rect):
                 if self.speed_x > 0:
                     self.rect.right = rect.left
@@ -74,7 +74,7 @@ class ball(Sprite):
  				
         	
         self.rect = self.rect.move(0, -self.speed_y)
-        for rect in ground_rects:
+        for rect in current_ground_rects:
             if self.rect.colliderect(rect):
                 self.isgrounded = True
                 self.isjumping = False
@@ -111,8 +111,8 @@ def EventHandler(balanar, move_screen):
            		balanar.movement_force = 0
     return move_screen
 
-def blit_ground (screen, ground_rects):    
-    for rect in ground_rects:
+def blit_ground (screen, current_ground_rects):    
+    for rect in current_ground_rects:
         pygame.draw.rect(screen, GROUND_COLOUR, rect)
         
 def animation_offset_calc():
@@ -122,19 +122,20 @@ def animation_offset_calc():
         yield num
         
                 
-def create_ground_rects(ground, ground_rects, move_screen, animation_offset_calc):
-    #ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
+def create_ground_rects(ground, current_ground_rects, move_screen, screen_offset, animation_offset_calc):
+    #current_ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
     animation_offset = 0
     if move_screen == True:
         animation_offset = animation_offset_calc.next()
         if animation_offset >= SCREEN_WIDTH:
             move_screen = False
+            screen_offset += SCREEN_WIDTH/80
     for i in range(0,20):
     #TODO- Too many hardcoded values!
-        ground_rects.append(pygame.Rect(count*80-(animation_offset), SCREEN_HEIGHT - ground[i]*50, 80, ground[i]*50))
+        current_ground_rects.append(pygame.Rect(count*80-(animation_offset), SCREEN_HEIGHT - ground[i+screen_offset]*50, 80, ground[i+screen_offset]*50))
         count = count+1
-    return move_screen
+    return move_screen, screen_offset
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -158,13 +159,15 @@ def game():
     
     filestream = open('level', 'r')
     
+    screen_offset = 0
+    
     ground = []
     x = filestream.read(1)
     while x != '':
         ground.append(int(x))
         x = filestream.read(1)
     
-    ground_rects = []
+    current_ground_rects = []
     
     func = animation_offset_calc()
     
@@ -181,15 +184,15 @@ def game():
         move_screen = EventHandler(balanar, move_screen) #Has to return a value because move_screen is an immutable datatype and so, wont be changed in EventHandler 
 
         #Update all objects 
-        ground_rects = [] 
-        move_screen = create_ground_rects(ground, ground_rects, move_screen, func)            
-        balanar.update(ground_rects)
+        current_ground_rects = [] 
+        move_screen, screen_offset = create_ground_rects(ground, current_ground_rects, move_screen, screen_offset, func)            
+        balanar.update(current_ground_rects)
 
         #Fill background colour
         screen.fill(BG_COLOUR)
 
         #Blit all objects to screen
-        blit_ground(screen, ground_rects)
+        blit_ground(screen, current_ground_rects)
         balanar.blitme(screen)
 
         #Flip the display buffer
