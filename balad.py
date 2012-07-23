@@ -120,22 +120,31 @@ def animation_offset_calc():
     while (1):
         num = num + 10
         yield num
+        if num >= SCREEN_WIDTH: #must be the same as the condition in move_screen_func()
+            num = 0
         
                 
-def create_ground_rects(ground, current_ground_rects, move_screen, screen_offset, animation_offset_calc):
+def create_ground_rects(ground, current_ground_rects, screen_offset, animation_offset):
+    """Creates the actual ground object consisting of 20 Rects"""
     #current_ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
-    animation_offset = 0
-    if move_screen == True:
-        animation_offset = animation_offset_calc.next()
-        if animation_offset >= SCREEN_WIDTH:
-            move_screen = False
-            screen_offset += SCREEN_WIDTH/80
     for i in range(0,20):
     #TODO- Too many hardcoded values!
         current_ground_rects.append(pygame.Rect(count*80-(animation_offset), SCREEN_HEIGHT - ground[i+screen_offset]*50, 80, ground[i+screen_offset]*50))
         count = count+1
-    return move_screen, screen_offset
+    
+def move_screen_func(animation_offset_calc, move_screen, screen_offset):
+    """Function to pan the screen over to the next or previous screen"""
+    animation_offset = 0
+    if move_screen == True:
+        animation_offset = animation_offset_calc.next()
+        print animation_offset
+        if animation_offset >= SCREEN_WIDTH:
+            move_screen = False
+            animation_offset = 0
+            screen_offset += 10
+    return move_screen, screen_offset, animation_offset
+            
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -160,6 +169,7 @@ def game():
     filestream = open('level', 'r')
     
     screen_offset = 0
+    animation_offset = 0
     
     ground = []
     x = filestream.read(1)
@@ -185,7 +195,10 @@ def game():
 
         #Update all objects 
         current_ground_rects = [] 
-        move_screen, screen_offset = create_ground_rects(ground, current_ground_rects, move_screen, screen_offset, func)            
+        if move_screen == True:
+            move_screen, screen_offset, animation_offset = move_screen_func(func, move_screen, screen_offset)
+        create_ground_rects(ground, current_ground_rects, screen_offset, animation_offset)
+            
         balanar.update(current_ground_rects)
 
         #Fill background colour
