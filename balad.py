@@ -19,6 +19,8 @@ BALANAR_MAX_SPEED = 10
 BALANAR_JUMP_SPEED = 20
 BALANAR_GRAVITY = 1.5
 
+global offset_count    #Meant for the screen movement. Bad naming i know :/
+offset_count = 0
 #------------------------------------------------------------------------
 # Class Definitions
 #------------------------------------------------------------------------
@@ -123,29 +125,31 @@ def animation_offset_calc():
     while (1):
         num = num + 10
         yield num
-        if num >= SCREEN_WIDTH: #must be the same as the condition in move_screen_func()
-            num = 0
+        #if num >= SCREEN_WIDTH: #must be the same as the condition in move_screen_func()
+        #    num = 0
         
                 
-def create_ground_rects(ground, current_ground_rects, screen_offset, animation_offset):
+def create_ground_rects(ground, current_ground_rects, screen_offset):
     """Creates the actual ground object consisting of 20 Rects"""
     #current_ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
-    for i in range(0,20):
+    for i in range(len(ground)):
     #TODO- Too many hardcoded values!
-        current_ground_rects.append(pygame.Rect(count*80-(animation_offset), SCREEN_HEIGHT - ground[i+screen_offset]*50, 80, ground[i+screen_offset]*50))
+        current_ground_rects.append(pygame.Rect(count*80-(screen_offset), SCREEN_HEIGHT - ground[i]*50, 80, ground[i]*50))
         count = count+1
     
 def move_screen_func(animation_offset_calc, move_screen, screen_offset):
     """Function to pan the screen over to the next or previous screen"""
-    animation_offset = 0
+    screen_offset = 0
+    global offset_count
     if move_screen == True:
-        animation_offset = animation_offset_calc.next()
-        if animation_offset >= SCREEN_WIDTH:
+        screen_offset = animation_offset_calc.next()
+        offset_count = offset_count+10
+        print offset_count
+        if offset_count >= SCREEN_WIDTH:
             move_screen = False
-            animation_offset = 0
-            screen_offset += 10
-    return move_screen, screen_offset, animation_offset
+            offset_count = 0
+    return move_screen, screen_offset
             
         
 #-------------------------------------------------------------------------
@@ -171,7 +175,6 @@ def game():
     filestream = open('level', 'r')
     
     screen_offset = 0
-    animation_offset = 0
     
     ground = []
     x = filestream.read(1)
@@ -182,6 +185,9 @@ def game():
     current_ground_rects = []
     
     func = animation_offset_calc()
+    
+    
+    offset_count = 0
     
     running = True
     
@@ -198,8 +204,8 @@ def game():
         #Update all objects 
         current_ground_rects = [] 
         if move_screen == True:
-            move_screen, screen_offset, animation_offset = move_screen_func(func, move_screen, screen_offset)
-        create_ground_rects(ground, current_ground_rects, screen_offset, animation_offset)
+            move_screen, screen_offset = move_screen_func(func, move_screen, screen_offset)
+        create_ground_rects(ground, current_ground_rects, screen_offset)
             
         balanar.update(current_ground_rects)
 
