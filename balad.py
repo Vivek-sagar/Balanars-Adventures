@@ -20,7 +20,7 @@ BALANAR_JUMP_SPEED = 20
 BALANAR_GRAVITY = 1.5
 SCREEN_PAN_SPEED = 30
 SCREEN_PAN_ZONE = 10
-MAX_SCREEN_OFFSET = 1000    #Changes whenever the number of blocks in level is changed
+MAX_SCREEN_OFFSET = 1500    #Changes whenever the number of blocks in level is changed
 
 global offset_count     #Meant for the screen movement. Bad naming i know :/
 global move_screen      #Flag to be set if the screen must be panned
@@ -70,7 +70,7 @@ class ball(Sprite):
                 elif self.speed_x < 0:
                     self.rect.left = rect.right
                 break
-              
+        #Keep Balanar at the same location while the screen is being moved      
         if move_screen:
             self.rect = self.rect.move(-(move_screen*SCREEN_PAN_SPEED), 0)  
             
