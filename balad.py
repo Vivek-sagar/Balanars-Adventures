@@ -102,6 +102,50 @@ class ball(Sprite):
 
     def blitme(self, screen):
         self.screen.blit(self.image, self.rect.topleft)
+        
+class enemy(Sprite):
+
+    def __init__(self, screen, img_filename, init_position, speed, ground_rects):
+        """Initialiser for all enemies"""
+        
+        self.screen = screen
+        self.position = init_position
+        self.image =  pygame.image.load(img_filename).convert()
+        self.rect = self.image.get_rect()
+        self.speed = speed
+        self.direction = 1
+        
+        self.rect = self.rect.move(init_position)
+        #Lifts the enemy onto ground level
+        for rects in ground_rects:
+            if self.rect.colliderect(rects):
+                self.rect.bottom = rects.top
+        
+    def update(self, ground_rects):
+        
+        self.rect = self.rect.move(self.direction*self.speed, 0);
+        for rect in ground_rects:
+            if self.rect.colliderect(rect):
+                if self.direction > 0:
+                    self.rect.right = rect.left
+                else:
+                    self.rect.left = rect.right
+                self.direction = -self.direction
+                
+            if self.rect.left < rect.right and rect.right - self.rect.left < 80:
+                if self.rect.bottom < rect.top - 5:
+                    self.direction = -self.direction
+                    self.rect.left = rect.right
+            elif self.rect.right > rect.left and self.rect.right - rect.left < 80:
+                if self.rect.bottom < rect.top - 5:
+                    self.direction = -self.direction
+                    self.rect.right = rect.left
+                    
+        
+    def blitme(self, screen):
+        self.screen.blit(self.image, self.rect.topleft)
+        
+        
 
 #-------------------------------------------------------------------------
 # Event Handler
@@ -145,7 +189,7 @@ def animation_offset_calc():
         
                 
 def create_ground_rects(ground, current_ground_rects):
-    """Creates the actual ground object consisting of 20 Rects"""
+    """Creates the actual ground object consisting of all rects"""
     #current_ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
     global screen_offset
@@ -184,6 +228,7 @@ def game():
     BG_COLOUR = 100, 200, 100
 
     img_filename = "images/ball.png"
+    enemy_img_filename = "images/enemy3.PNG"
 
     pygame.init()
     screen = pygame.display.set_mode ((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
@@ -208,8 +253,11 @@ def game():
         ground.append(int(x))
         x = filestream.read(1)
     
-    current_ground_rects = []
+    #Calculates current_ground_rects so that it can be fed to enemy.init
+    current_ground_rects = []    
+    create_ground_rects(ground, current_ground_rects)
     
+    bruno = enemy(screen, enemy_img_filename, (500, SCREEN_HEIGHT-50), 2, current_ground_rects)
     
     
     offset_count = 0
@@ -233,6 +281,7 @@ def game():
         create_ground_rects(ground, current_ground_rects)
             
         balanar.update(current_ground_rects)
+        bruno.update(current_ground_rects)
 
         #Fill background colour
         screen.fill(BG_COLOUR)
@@ -240,6 +289,7 @@ def game():
         #Blit all objects to screen
         blit_ground(screen, current_ground_rects)
         balanar.blitme(screen)
+        bruno.blitme(screen)
 
         #Flip the display buffer
         pygame.display.flip()
