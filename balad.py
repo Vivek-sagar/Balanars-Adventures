@@ -20,7 +20,7 @@ BALANAR_JUMP_SPEED = 20
 BALANAR_GRAVITY = 1.5
 SCREEN_PAN_SPEED = 30
 SCREEN_PAN_ZONE = 10
-MAX_SCREEN_OFFSET = 1000    #Changes whenever the number of blocks in level is changed
+MAX_SCREEN_OFFSET = 3000    #Changes whenever the number of blocks in level is changed
 
 global offset_count     #Meant for the screen movement. Bad naming i know :/
 global move_screen      #Flag to be set if the screen must be panned
@@ -123,6 +123,7 @@ class enemy(Sprite):
         
     def update(self, ground_rects):
         
+        #TODO: Update position only if the creep is within the screen!
         self.rect = self.rect.move(self.direction*self.speed, 0);
         for rect in ground_rects:
             if self.rect.colliderect(rect):
@@ -216,6 +217,10 @@ def move_screen_func():
             move_screen = 0
             offset_count = 0
             
+def hit_enemy():
+    print (':ok:')
+
+            
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -229,8 +234,11 @@ def game():
 
     img_filename = "images/ball.png"
     enemy_img_filename = "images/enemy3.PNG"
+    base_track = "sounds/base.ogg"
+    
 
     pygame.init()
+    pygame.mixer.init()
     screen = pygame.display.set_mode ((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
     clock = pygame.time.Clock()
     
@@ -241,7 +249,8 @@ def game():
     move_screen = 0
     screen_offset = 0
     
-    
+    pygame.mixer.music.load(base_track)
+    pygame.mixer.music.play(-1)
     
     balanar = ball(screen, img_filename, (100,SCREEN_HEIGHT-50), (0,0))
     
@@ -257,7 +266,8 @@ def game():
     current_ground_rects = []    
     create_ground_rects(ground, current_ground_rects)
     
-    bruno = enemy(screen, enemy_img_filename, (500, SCREEN_HEIGHT-50), 2, current_ground_rects)
+    enemies = []
+    enemies.append(enemy(screen, enemy_img_filename, (500, SCREEN_HEIGHT-50), 2, current_ground_rects))
     
     
     offset_count = 0
@@ -281,15 +291,22 @@ def game():
         create_ground_rects(ground, current_ground_rects)
             
         balanar.update(current_ground_rects)
-        bruno.update(current_ground_rects)
+        for enemy1 in enemies:
+            enemy1.update(current_ground_rects)
 
         #Fill background colour
         screen.fill(BG_COLOUR)
+        
+        #Check for collision between balanar and an enemy
+        for enemy1 in enemies:
+            if enemy1.rect.colliderect(balanar.rect):
+                hit_enemy()
 
         #Blit all objects to screen
         blit_ground(screen, current_ground_rects)
         balanar.blitme(screen)
-        bruno.blitme(screen)
+        for enemy1 in enemies:
+            enemy1.blitme(screen)
 
         #Flip the display buffer
         pygame.display.flip()
