@@ -21,11 +21,7 @@ BALANAR_JUMP_SPEED = 20
 BALANAR_GRAVITY = 1.5
 SCREEN_PAN_SPEED = 30
 SCREEN_PAN_ZONE = 10
-<<<<<<< HEAD
-MAX_SCREEN_OFFSET = 1500    #Changes whenever the number of blocks in level is changed
-=======
 MAX_SCREEN_OFFSET = 3000    #Changes whenever the number of blocks in level is changed
->>>>>>> enemies
 
 global offset_count     #Meant for the screen movement. Bad naming i know :/
 global move_screen      #Flag to be set if the screen must be panned
