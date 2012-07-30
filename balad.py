@@ -141,6 +141,9 @@ class enemy(Sprite):
                 if self.rect.bottom < rect.top - 5:
                     self.direction = -self.direction
                     self.rect.right = rect.left
+
+        if move_screen:
+            self.rect = self.rect.move(-(move_screen*SCREEN_PAN_SPEED), 0) 
                     
         
     def blitme(self, screen):
@@ -250,7 +253,7 @@ def game():
     screen_offset = 0
     
     pygame.mixer.music.load(base_track)
-    pygame.mixer.music.play(-1)
+    #pygame.mixer.music.play(-1)
     
     balanar = ball(screen, img_filename, (100,SCREEN_HEIGHT-50), (0,0))
     
@@ -267,8 +270,8 @@ def game():
     create_ground_rects(ground, current_ground_rects)
     
     enemies = []
-    enemies.append(enemy(screen, enemy_img_filename, (500, SCREEN_HEIGHT-50), 2, current_ground_rects))
-    
+    for i in range (0, 10):
+        enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-50), 2, current_ground_rects))
     
     offset_count = 0
     
