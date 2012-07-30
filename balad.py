@@ -45,11 +45,16 @@ class ball(Sprite):
         self.position = init_position
         self.image =  pygame.image.load(img_filename).convert()
         self.rect = self.image.get_rect()
+        self.attack_rect = pygame.Rect(0,0,0,0)
+        self.attack_rect.width, self.attack_rect.height = 0, self.rect.height
         #Pull Balanar back onto the screen
         init_position = tuple(map(operator.add, init_position, (0, -self.rect.height)))
         self.rect = self.rect.move(init_position)
+        self.attack_rect.topleft = self.rect.topleft
         self.rect.inflate(-5, -5)
         self.isgrounded = True
+        self.isattacking = 0
+        self.direction = 1
 
     def update(self, current_ground_rects):
         """Updates ball position. Checks for obstacles, causes jumping and allows for falling off edges"""
@@ -59,6 +64,11 @@ class ball(Sprite):
         if self.movement_force != 0:
         	if abs(self.speed_x) <= BALANAR_MAX_SPEED: 
         		self.speed_x += MOVEMENT_SPEED_INCREMENT * self.movement_force
+        		#TODO: Definitely a better way to do this!
+        		if self.speed_x > 0:
+        		    self.direction = 1
+        		elif self.speed_x < 0:
+        		    self.direction = -1
         else:
         	if self.speed_x > 0: self.speed_x -= MOVEMENT_SPEED_INCREMENT
         	elif self.speed_x < 0: self.speed_x += MOVEMENT_SPEED_INCREMENT
@@ -71,6 +81,7 @@ class ball(Sprite):
                 elif self.speed_x < 0:
                     self.rect.left = rect.right
                 break
+                
         #Keep Balanar at the same location while the screen is being moved      
         if move_screen:
             self.rect = self.rect.move(-(move_screen*SCREEN_PAN_SPEED), 0)  
@@ -100,9 +111,25 @@ class ball(Sprite):
                 break
             else:
                 self.isgrounded = False
+        
+                    
+        #Attacking
+        if self.isattacking:
+            self.isattacking = self.isattacking + 1
+            self.attack_rect.width = 10*self.isattacking
+            print ('Yeah!')
+            if (self.isattacking > 10):
+                self.attack_rect.width = 0
+                self.isattacking = 0
+                
+        if self.direction == 1:        
+            self.attack_rect.topleft = self.rect.topright
+        elif self.direction == -1:
+            self.attack_rect.topright = self.rect.topleft
 
     def blitme(self, screen):
         self.screen.blit(self.image, self.rect.topleft)
+        pygame.draw.rect(screen, (0,0,0), self.attack_rect)
         
 class enemy(Sprite):
 
@@ -159,21 +186,24 @@ def EventHandler(balanar):
     """Keyboard input handler"""
     global move_screen
     for event in pygame.event.get():
-    	if event.type == pygame.QUIT:
-        	pygame.quit()
+        if event.type == pygame.QUIT:
+            pygame.quit()
         if event.type == KEYDOWN:
-        	if event.key == K_q:
-        		pygame.quit()
-           	if event.key == K_LEFT:
-           		balanar.movement_force = -1
-           	if event.key == K_RIGHT:
-           		balanar.movement_force = 1
-           	if event.key == K_UP:
-           		balanar.isjumping = True
+            if event.key == K_q:
+                pygame.quit()
+            elif event.key == K_LEFT:
+                balanar.movement_force = -1
+            elif event.key == K_RIGHT:
+                balanar.movement_force = 1
+            elif event.key == K_DOWN:
+                balanar.isattacking = 1
+            elif event.key == K_UP:
+                balanar.isjumping = True
+                
         if event.type == KEYUP:
            	if event.key == K_LEFT:
            		balanar.movement_force = 0
-           	if event.key == K_RIGHT:
+           	elif event.key == K_RIGHT:
            		balanar.movement_force = 0
 
 def blit_ground (screen, current_ground_rects):
