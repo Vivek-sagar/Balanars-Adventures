@@ -12,8 +12,10 @@ import operator
 # Global Constants
 #------------------------------------------------------------------------
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 400
+BG_COLOUR = 100, 200, 100
 GROUND_UNIT_WIDTH, GROUND_UNIT_HEIGHT = 80, 50
 GROUND_COLOUR = (25, 50, 25)
+HEALTH_BAR_COLOUR = (200, 255, 100)
 
 MOVEMENT_SPEED_INCREMENT = 1.5
 BALANAR_MAX_SPEED = 10
@@ -55,6 +57,7 @@ class ball(Sprite):
         self.isgrounded = True
         self.isattacking = 0
         self.direction = 1
+        self.health = 100
 
     def update(self, current_ground_rects):
         """Updates ball position. Checks for obstacles, causes jumping and allows for falling off edges"""
@@ -116,8 +119,7 @@ class ball(Sprite):
         #Attacking
         if self.isattacking:
             self.isattacking = self.isattacking + 1
-            self.attack_rect.width = 10*self.isattacking
-            print ('Yeah!')
+            self.attack_rect.width = 5*self.isattacking
             if (self.isattacking > 10):
                 self.attack_rect.width = 0
                 self.isattacking = 0
@@ -142,6 +144,7 @@ class enemy(Sprite):
         self.rect = self.image.get_rect()
         self.speed = speed
         self.direction = 1
+        self.health = 100
         
         self.rect = self.rect.move(init_position)
         #Lifts the enemy onto ground level
@@ -172,11 +175,15 @@ class enemy(Sprite):
 
         if move_screen:
             self.rect = self.rect.move(-(move_screen*SCREEN_PAN_SPEED), 0) 
+            
+        #Health Considerations:
+        
+        
                     
         
     def blitme(self, screen):
         self.screen.blit(self.image, self.rect.topleft)
-        
+        pygame.draw.rect(screen, HEALTH_BAR_COLOUR, pygame.Rect(self.rect.left, self.rect.top-20, self.rect.width, 10))
         
 
 #-------------------------------------------------------------------------
@@ -238,10 +245,11 @@ def move_screen_func():
             move_screen = 0
             offset_count = 0
             
-def hit_enemy():
+def hit_enemy():        #For when an enemy hits balanar
     print (':ok:')
 
-            
+def balanar_hit():      #For when Balanar hits an enemy :P
+    print ('Oh Yeah!')
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -250,8 +258,6 @@ def hit_enemy():
 def game():
 
     #-------------------------Game Initialization-------------------------
-    
-    BG_COLOUR = 100, 200, 100
 
     img_filename = "images/ball.png"
     enemy_img_filename = "images/enemy3.PNG"
@@ -322,12 +328,15 @@ def game():
         for enemy1 in enemies:
             if enemy1.rect.colliderect(balanar.rect):
                 hit_enemy()
+            #Check for collision between balanar's attack rect and an enemy
+            if enemy1.rect.colliderect(balanar.attack_rect):
+                balanar_hit()
 
         #Blit all objects to screen
         blit_ground(screen, current_ground_rects)
-        balanar.blitme(screen)
         for enemy1 in enemies:
             enemy1.blitme(screen)
+        balanar.blitme(screen)
 
         #Flip the display buffer
         pygame.display.flip()
