@@ -12,6 +12,7 @@ import operator
 # Global Constants
 #------------------------------------------------------------------------
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 400
+GROUND_UNIT_WIDTH, GROUND_UNIT_HEIGHT = 80, 50
 GROUND_COLOUR = (25, 50, 25)
 
 MOVEMENT_SPEED_INCREMENT = 1.5
@@ -20,7 +21,11 @@ BALANAR_JUMP_SPEED = 20
 BALANAR_GRAVITY = 1.5
 SCREEN_PAN_SPEED = 30
 SCREEN_PAN_ZONE = 10
+<<<<<<< HEAD
 MAX_SCREEN_OFFSET = 1500    #Changes whenever the number of blocks in level is changed
+=======
+MAX_SCREEN_OFFSET = 3000    #Changes whenever the number of blocks in level is changed
+>>>>>>> enemies
 
 global offset_count     #Meant for the screen movement. Bad naming i know :/
 global move_screen      #Flag to be set if the screen must be panned
@@ -102,6 +107,54 @@ class ball(Sprite):
 
     def blitme(self, screen):
         self.screen.blit(self.image, self.rect.topleft)
+        
+class enemy(Sprite):
+
+    def __init__(self, screen, img_filename, init_position, speed, ground_rects):
+        """Initialiser for all enemies"""
+        
+        self.screen = screen
+        self.position = init_position
+        self.image =  pygame.image.load(img_filename).convert()
+        self.rect = self.image.get_rect()
+        self.speed = speed
+        self.direction = 1
+        
+        self.rect = self.rect.move(init_position)
+        #Lifts the enemy onto ground level
+        for rects in ground_rects:
+            if self.rect.colliderect(rects):
+                self.rect.bottom = rects.top
+        
+    def update(self, ground_rects):
+        
+        #TODO: Update position only if the creep is within the screen!
+        self.rect = self.rect.move(self.direction*self.speed, 0);
+        for rect in ground_rects:
+            if self.rect.colliderect(rect):
+                if self.direction > 0:
+                    self.rect.right = rect.left
+                else:
+                    self.rect.left = rect.right
+                self.direction = -self.direction
+                
+            if self.rect.left < rect.right and rect.right - self.rect.left < GROUND_UNIT_WIDTH:
+                if self.rect.bottom < rect.top - 5:
+                    self.direction = -self.direction
+                    self.rect.left = rect.right
+            elif self.rect.right > rect.left and self.rect.right - rect.left < GROUND_UNIT_WIDTH:
+                if self.rect.bottom < rect.top - 5:
+                    self.direction = -self.direction
+                    self.rect.right = rect.left
+
+        if move_screen:
+            self.rect = self.rect.move(-(move_screen*SCREEN_PAN_SPEED), 0) 
+                    
+        
+    def blitme(self, screen):
+        self.screen.blit(self.image, self.rect.topleft)
+        
+        
 
 #-------------------------------------------------------------------------
 # Event Handler
@@ -131,27 +184,14 @@ def blit_ground (screen, current_ground_rects):
     """ Blits the ground based on current_ground_rects"""    
     for rect in current_ground_rects:
         pygame.draw.rect(screen, GROUND_COLOUR, rect)
-    
-#Defunct!    
-def animation_offset_calc():
-    """Number iterating generator function. For screen movement"""
-    num = 0
-    while (1):
-        if direction > 0:
-            num = num + SCREEN_PAN_SPEED
-        elif direction < 0:
-            num = num - SCREEN_PAN_SPEED
-        yield num
-        
-                
+         
 def create_ground_rects(ground, current_ground_rects):
-    """Creates the actual ground object consisting of 20 Rects"""
+    """Creates the actual ground object consisting of all rects"""
     #current_ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
     global screen_offset
     for i in range(len(ground)):
-    #TODO- Too many hardcoded values!
-        current_ground_rects.append(pygame.Rect(count*80-screen_offset, SCREEN_HEIGHT - ground[i]*50, 80, ground[i]*50))
+        current_ground_rects.append(pygame.Rect(count*GROUND_UNIT_WIDTH-screen_offset, SCREEN_HEIGHT - ground[i]*GROUND_UNIT_HEIGHT, GROUND_UNIT_WIDTH, ground[i]*GROUND_UNIT_HEIGHT))
         count = count+1
     
 def move_screen_func():
@@ -172,6 +212,10 @@ def move_screen_func():
             move_screen = 0
             offset_count = 0
             
+def hit_enemy():
+    print (':ok:')
+
+            
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -184,8 +228,12 @@ def game():
     BG_COLOUR = 100, 200, 100
 
     img_filename = "images/ball.png"
+    enemy_img_filename = "images/enemy3.PNG"
+    base_track = "sounds/base.ogg"
+    
 
     pygame.init()
+    pygame.mixer.init()
     screen = pygame.display.set_mode ((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
     clock = pygame.time.Clock()
     
@@ -196,9 +244,10 @@ def game():
     move_screen = 0
     screen_offset = 0
     
+    pygame.mixer.music.load(base_track)
+    #pygame.mixer.music.play(-1)
     
-    
-    balanar = ball(screen, img_filename, (100,SCREEN_HEIGHT-50), (0,0))
+    balanar = ball(screen, img_filename, (100,SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), (0,0))
     
     filestream = open('level', 'r')
     
@@ -208,9 +257,13 @@ def game():
         ground.append(int(x))
         x = filestream.read(1)
     
-    current_ground_rects = []
+    #Calculates current_ground_rects so that it can be fed to enemy.init
+    current_ground_rects = []    
+    create_ground_rects(ground, current_ground_rects)
     
-    
+    enemies = []
+    for i in range (0, 10):
+        enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
     
     offset_count = 0
     
@@ -233,13 +286,22 @@ def game():
         create_ground_rects(ground, current_ground_rects)
             
         balanar.update(current_ground_rects)
+        for enemy1 in enemies:
+            enemy1.update(current_ground_rects)
 
         #Fill background colour
         screen.fill(BG_COLOUR)
+        
+        #Check for collision between balanar and an enemy
+        for enemy1 in enemies:
+            if enemy1.rect.colliderect(balanar.rect):
+                hit_enemy()
 
         #Blit all objects to screen
         blit_ground(screen, current_ground_rects)
         balanar.blitme(screen)
+        for enemy1 in enemies:
+            enemy1.blitme(screen)
 
         #Flip the display buffer
         pygame.display.flip()
