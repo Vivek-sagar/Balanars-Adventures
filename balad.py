@@ -93,11 +93,14 @@ class ball(Sprite):
         	
         self.rect = self.rect.move(0, -self.speed_y)
         for rect in current_ground_rects:
-            if self.rect.colliderect(rect):
+            if self.rect.colliderect(rect) and self.speed_y < 0:
                 self.isgrounded = True
                 self.isjumping = False
                 self.rect.bottom = rect.top
                 break
+            elif self.rect.colliderect(rect) and self.speed_y > 0:       #Case where balanar bumps his head
+                self.speed_y = 0
+                self.rect.top = rect.bottom
             else:
                 self.isgrounded = False
 
@@ -186,10 +189,17 @@ def create_ground_rects(ground, current_ground_rects):
     #current_ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
     global screen_offset
-    for i in range(len(ground)):
-        current_ground_rects.append(pygame.Rect(count*GROUND_UNIT_WIDTH-screen_offset, SCREEN_HEIGHT - ground[i]*GROUND_UNIT_HEIGHT, GROUND_UNIT_WIDTH, ground[i]*GROUND_UNIT_HEIGHT))
-        count = count+1
     
+    for i in range(len(ground)):
+        ground_base = (ground[i] - ground[i]%100)/100
+        gap = ((ground[i]-ground_base*100) - (ground[i]-ground_base*100)%10)/10
+        cloud_size = ground[i]%10
+        current_ground_rects.append(pygame.Rect(count*GROUND_UNIT_WIDTH-screen_offset, SCREEN_HEIGHT - ground_base*GROUND_UNIT_HEIGHT, GROUND_UNIT_WIDTH, ground_base*GROUND_UNIT_HEIGHT))
+        if gap != 0:            #This unit contains a cloud
+            current_ground_rects.append(pygame.Rect(count*GROUND_UNIT_WIDTH-screen_offset, SCREEN_HEIGHT - (ground_base+gap+cloud_size)*GROUND_UNIT_HEIGHT, GROUND_UNIT_WIDTH, cloud_size*GROUND_UNIT_HEIGHT))
+        count = count+1
+            
+            
 def move_screen_func():
     """Function to pan the screen over to the next or previous screen"""
     global move_screen
@@ -247,10 +257,15 @@ def game():
     
     filestream = open('level', 'r')
     
+    temp = ''
     ground = []
     x = filestream.read(1)
     while x != '':
-        ground.append(int(x))
+        if (x != ';'):
+            temp = temp + x
+        else:
+            ground.append(int(temp))
+            temp = ''
         x = filestream.read(1)
     
     #Calculates current_ground_rects so that it can be fed to enemy.init
@@ -279,7 +294,7 @@ def game():
         current_ground_rects = [] 
         if move_screen:
             move_screen_func()
-        create_ground_rects(ground, current_ground_rects)
+        create_ground_rects(ground, current_ground_rects)   #TODO: Can this be moved out ??
             
         balanar.update(current_ground_rects)
         for enemy1 in enemies:
