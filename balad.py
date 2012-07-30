@@ -12,6 +12,7 @@ import operator
 # Global Constants
 #------------------------------------------------------------------------
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 400
+GROUND_UNIT_WIDTH, GROUND_UNIT_HEIGHT = 80, 50
 GROUND_COLOUR = (25, 50, 25)
 
 MOVEMENT_SPEED_INCREMENT = 1.5
@@ -133,11 +134,11 @@ class enemy(Sprite):
                     self.rect.left = rect.right
                 self.direction = -self.direction
                 
-            if self.rect.left < rect.right and rect.right - self.rect.left < 80:
+            if self.rect.left < rect.right and rect.right - self.rect.left < GROUND_UNIT_WIDTH:
                 if self.rect.bottom < rect.top - 5:
                     self.direction = -self.direction
                     self.rect.left = rect.right
-            elif self.rect.right > rect.left and self.rect.right - rect.left < 80:
+            elif self.rect.right > rect.left and self.rect.right - rect.left < GROUND_UNIT_WIDTH:
                 if self.rect.bottom < rect.top - 5:
                     self.direction = -self.direction
                     self.rect.right = rect.left
@@ -179,27 +180,14 @@ def blit_ground (screen, current_ground_rects):
     """ Blits the ground based on current_ground_rects"""    
     for rect in current_ground_rects:
         pygame.draw.rect(screen, GROUND_COLOUR, rect)
-    
-#Defunct!    
-def animation_offset_calc():
-    """Number iterating generator function. For screen movement"""
-    num = 0
-    while (1):
-        if direction > 0:
-            num = num + SCREEN_PAN_SPEED
-        elif direction < 0:
-            num = num - SCREEN_PAN_SPEED
-        yield num
-        
-                
+         
 def create_ground_rects(ground, current_ground_rects):
     """Creates the actual ground object consisting of all rects"""
     #current_ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
     global screen_offset
     for i in range(len(ground)):
-    #TODO- Too many hardcoded values!
-        current_ground_rects.append(pygame.Rect(count*80-screen_offset, SCREEN_HEIGHT - ground[i]*50, 80, ground[i]*50))
+        current_ground_rects.append(pygame.Rect(count*GROUND_UNIT_WIDTH-screen_offset, SCREEN_HEIGHT - ground[i]*GROUND_UNIT_HEIGHT, GROUND_UNIT_WIDTH, ground[i]*GROUND_UNIT_HEIGHT))
         count = count+1
     
 def move_screen_func():
@@ -255,7 +243,7 @@ def game():
     pygame.mixer.music.load(base_track)
     #pygame.mixer.music.play(-1)
     
-    balanar = ball(screen, img_filename, (100,SCREEN_HEIGHT-50), (0,0))
+    balanar = ball(screen, img_filename, (100,SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), (0,0))
     
     filestream = open('level', 'r')
     
@@ -271,7 +259,7 @@ def game():
     
     enemies = []
     for i in range (0, 10):
-        enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-50), 2, current_ground_rects))
+        enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
     
     offset_count = 0
     
