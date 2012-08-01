@@ -23,11 +23,11 @@ BALANAR_JUMP_SPEED = 20
 BALANAR_GRAVITY = 1.5
 SCREEN_PAN_SPEED = 30
 SCREEN_PAN_ZONE = 10
-MAX_SCREEN_OFFSET = 3000    #Changes whenever the number of blocks in level is changed
+MAX_SCREEN_OFFSET = 3000     #Changes whenever the number of blocks in level is changed
 
-global offset_count     #Meant for the screen movement. Bad naming i know :/
-global move_screen      #Flag to be set if the screen must be panned
-global screen_offset    #Keeps track of the current offset of the screen
+global offset_count         #Meant for the screen movement. Bad naming i know :/
+global move_screen          #Flag to be set if the screen must be panned
+global screen_offset        #Keeps track of the current offset of the screen
 #------------------------------------------------------------------------
 # Class Definitions
 #------------------------------------------------------------------------
@@ -47,6 +47,7 @@ class ball(Sprite):
         self.position = init_position
         self.image =  pygame.image.load(img_filename).convert()
         self.rect = self.image.get_rect()
+        #self.image.set_colorkey((255, 248, 255))   #Required only if the image isnt transparent
         self.attack_rect = pygame.Rect(0,0,0,0)
         self.attack_rect.width, self.attack_rect.height = 0, self.rect.height
         #Pull Balanar back onto the screen
@@ -69,9 +70,15 @@ class ball(Sprite):
         		self.speed_x += MOVEMENT_SPEED_INCREMENT * self.movement_force
         		#TODO: Definitely a better way to do this!
         		if self.speed_x > 0:
+        		    if self.direction != 1:     #If direction changed
+        		        self.image = pygame.transform.flip(self.image, True, False)
         		    self.direction = 1
+        		    
         		elif self.speed_x < 0:
+        		    if self.direction != -1:     #If direction changed
+        		        self.image = pygame.transform.flip(self.image, True, False)
         		    self.direction = -1
+        		    
         else:
         	if self.speed_x > 0: self.speed_x -= MOVEMENT_SPEED_INCREMENT
         	elif self.speed_x < 0: self.speed_x += MOVEMENT_SPEED_INCREMENT
@@ -143,10 +150,10 @@ class enemy(Sprite):
         self.image =  pygame.image.load(img_filename).convert()
         self.rect = self.image.get_rect()
         self.speed = speed
-        self.direction = 1
+        self.direction = -1
         self.health = 100 
         self.image.set_colorkey((255, 255, 255))     
-        self.hit_cooldown = 0 
+        self.hit_cooldown = 0
         self.rect = self.rect.move(init_position)
         #Lifts the enemy onto ground level
         for rects in ground_rects:
@@ -163,14 +170,17 @@ class enemy(Sprite):
                     self.rect.right = rect.left
                 else:
                     self.rect.left = rect.right
+                self.image = pygame.transform.flip(self.image, True, False)
                 self.direction = -self.direction
                 
             if self.rect.left < rect.right and rect.right - self.rect.left < GROUND_UNIT_WIDTH:
                 if self.rect.bottom < rect.top - 5:
+                    self.image = pygame.transform.flip(self.image, True, False)
                     self.direction = -self.direction
                     self.rect.left = rect.right
             elif self.rect.right > rect.left and self.rect.right - rect.left < GROUND_UNIT_WIDTH:
                 if self.rect.bottom < rect.top - 5:
+                    self.image = pygame.transform.flip(self.image, True, False)
                     self.direction = -self.direction
                     self.rect.right = rect.left
 
@@ -269,7 +279,7 @@ def game():
 
     #-------------------------Game Initialization-------------------------
 
-    img_filename = "images/ball.png"
+    img_filename = "images/balanar2.png"
     enemy_img_filename = "images/enemy3.PNG"
     base_track = "sounds/base.ogg"
     
