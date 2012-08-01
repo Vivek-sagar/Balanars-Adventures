@@ -130,22 +130,23 @@ class ball(Sprite):
             self.attack_rect.topright = self.rect.topleft
 
     def blitme(self, screen):
+        """Blits Balanar and his attacking rect onto the screen"""
         self.screen.blit(self.image, self.rect.topleft)
         pygame.draw.rect(screen, (0,0,0), self.attack_rect)
         
 class enemy(Sprite):
 
     def __init__(self, screen, img_filename, init_position, speed, ground_rects):
-        """Initialiser for all enemies"""
-        
+        """Initialiser for all enemies"""        
         self.screen = screen
         self.position = init_position
         self.image =  pygame.image.load(img_filename).convert()
         self.rect = self.image.get_rect()
         self.speed = speed
         self.direction = 1
-        self.health = 100
-        
+        self.health = 100 
+        self.image.set_colorkey((255, 255, 255))     
+        self.hit_cooldown = 0 
         self.rect = self.rect.move(init_position)
         #Lifts the enemy onto ground level
         for rects in ground_rects:
@@ -153,7 +154,7 @@ class enemy(Sprite):
                 self.rect.bottom = rects.top
         
     def update(self, ground_rects):
-        
+        """Updates enemy position, checking for obstacles and allowing for screen panning""" 
         #TODO: Update position only if the creep is within the screen!
         self.rect = self.rect.move(self.direction*self.speed, 0);
         for rect in ground_rects:
@@ -178,12 +179,18 @@ class enemy(Sprite):
             
         #Health Considerations:
         
+        if self.hit_cooldown > 0:
+            self.hit_cooldown = self.hit_cooldown - 1
+        if self.health < 0:
+            #Destroy!!
+            self.health = 0
         
                     
         
     def blitme(self, screen):
+        """Blits the enemy onto the screen"""
         self.screen.blit(self.image, self.rect.topleft)
-        pygame.draw.rect(screen, HEALTH_BAR_COLOUR, pygame.Rect(self.rect.left, self.rect.top-20, self.rect.width, 10))
+        pygame.draw.rect(screen, HEALTH_BAR_COLOUR, pygame.Rect(self.rect.left, self.rect.top-20, self.rect.width*(self.health/100.0), 10))
         
 
 #-------------------------------------------------------------------------
@@ -245,10 +252,13 @@ def move_screen_func():
             move_screen = 0
             offset_count = 0
             
-def hit_enemy():        #For when an enemy hits balanar
+def hit_enemy(enemy):        #For when an enemy hits balanar
     print (':ok:')
 
-def balanar_hit():      #For when Balanar hits an enemy :P
+def balanar_hit(enemy):      #For when Balanar hits an enemy :P
+    if enemy.hit_cooldown == 0:
+        enemy.health = enemy.health - 10
+        enemy.hit_cooldown = 10
     print ('Oh Yeah!')
         
 #-------------------------------------------------------------------------
@@ -267,6 +277,7 @@ def game():
     pygame.init()
     pygame.mixer.init()
     screen = pygame.display.set_mode ((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
+    
     clock = pygame.time.Clock()
     
     global move_screen
@@ -316,21 +327,21 @@ def game():
         if move_screen:
             move_screen_func()
         create_ground_rects(ground, current_ground_rects)
+        
+        #Check for collision between balanar and an enemy
+        for enemy1 in enemies:
+            if enemy1.rect.colliderect(balanar.rect):
+                hit_enemy(enemy1)
+        #Check for collision between balanar's attack rect and an enemy
+            if enemy1.rect.colliderect(balanar.attack_rect):
+                balanar_hit(enemy1)
             
         balanar.update(current_ground_rects)
         for enemy1 in enemies:
             enemy1.update(current_ground_rects)
 
         #Fill background colour
-        screen.fill(BG_COLOUR)
-        
-        #Check for collision between balanar and an enemy
-        for enemy1 in enemies:
-            if enemy1.rect.colliderect(balanar.rect):
-                hit_enemy()
-            #Check for collision between balanar's attack rect and an enemy
-            if enemy1.rect.colliderect(balanar.attack_rect):
-                balanar_hit()
+        screen.fill(BG_COLOUR)       
 
         #Blit all objects to screen
         blit_ground(screen, current_ground_rects)
