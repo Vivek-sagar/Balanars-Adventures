@@ -160,7 +160,7 @@ class enemy(Sprite):
             if self.rect.colliderect(rects):
                 self.rect.bottom = rects.top
         
-    def update(self, ground_rects):
+    def update(self, ground_rects, enemies):
         """Updates enemy position, checking for obstacles and allowing for screen panning""" 
         #TODO: Update position only if the creep is within the screen!
         self.rect = self.rect.move(self.direction*self.speed, 0);
@@ -193,6 +193,7 @@ class enemy(Sprite):
             self.hit_cooldown = self.hit_cooldown - 1
         if self.health < 0:
             #Destroy!!
+            enemies.remove(self)
             self.health = 0
         
                     
@@ -348,7 +349,7 @@ def game():
             
         balanar.update(current_ground_rects)
         for enemy1 in enemies:
-            enemy1.update(current_ground_rects)
+            enemy1.update(current_ground_rects, enemies)
 
         #Fill background colour
         screen.fill(BG_COLOUR)       
