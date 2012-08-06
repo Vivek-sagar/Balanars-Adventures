@@ -18,7 +18,7 @@ GROUND_COLOUR = (25, 50, 25)
 HEALTH_BAR_COLOUR = (200, 255, 100)
 
 MOVEMENT_SPEED_INCREMENT = 1.5
-BALANAR_MAX_SPEED = 10
+BALANAR_MAX_SPEED = 5
 BALANAR_JUMP_SPEED = 20
 BALANAR_GRAVITY = 1.5
 SCREEN_PAN_SPEED = 30
@@ -46,6 +46,10 @@ class ball(Sprite):
         self.speed_x, self.speed_y = speed
         self.position = init_position
         self.image =  pygame.image.load(img_filename).convert()
+        self.image_walk_1 = pygame.image.load("images/balanar_walk_1.png")
+        self.image_walk_2 = pygame.image.load("images/balanar_walk_2.png")
+        self.image_walk_3 = pygame.image.load("images/balanar_walk_3.png")
+        self.image_walk_4 = pygame.image.load("images/balanar_walk_4.png")
         self.rect = self.image.get_rect()
         #self.image.set_colorkey((255, 248, 255))   #Required only if the image isnt transparent
         self.attack_rect = pygame.Rect(0,0,0,0)
@@ -57,6 +61,8 @@ class ball(Sprite):
         self.rect.inflate(-5, -5)
         self.isgrounded = True
         self.isattacking = 0
+        self.walk_state = 1
+        self.image_change_threshold = 0
         self.direction = 1
         self.health = 100
 
@@ -84,6 +90,7 @@ class ball(Sprite):
         	elif self.speed_x < 0: self.speed_x += MOVEMENT_SPEED_INCREMENT
        
         self.rect = self.rect.move(self.speed_x, 0)
+        self.image_change_threshold = self.image_change_threshold + self.speed_x     #To check if the image needs to be changed
         for rect in current_ground_rects:
             if self.rect.colliderect(rect):
                 if self.speed_x > 0:
@@ -121,6 +128,12 @@ class ball(Sprite):
                 break
             else:
                 self.isgrounded = False
+          
+        if self.image_change_threshold > 20:
+            self.image_change_threshold = 0      
+            self.walk_state = self.walk_state + 1
+            if self.walk_state > 4:
+                self.walk_state = 1
         
                     
         #Attacking
@@ -135,10 +148,20 @@ class ball(Sprite):
             self.attack_rect.topleft = self.rect.topright
         elif self.direction == -1:
             self.attack_rect.topright = self.rect.topleft
+            
+        
 
     def blitme(self, screen):
         """Blits Balanar and his attacking rect onto the screen"""
-        self.screen.blit(self.image, self.rect.topleft)
+        if self.walk_state == 1:
+            self.screen.blit(self.image_walk_1, self.rect.topleft)
+        elif self.walk_state == 2:
+            self.screen.blit(self.image_walk_2, self.rect.topleft)
+        elif self.walk_state == 3:
+            self.screen.blit(self.image_walk_3, self.rect.topleft)
+        elif self.walk_state == 4:
+            self.screen.blit(self.image_walk_4, self.rect.topleft)
+            
         pygame.draw.rect(screen, (0,0,0), self.attack_rect)
         
 class enemy(Sprite):
@@ -280,7 +303,7 @@ def game():
 
     #-------------------------Game Initialization-------------------------
 
-    img_filename = "images/balanar2.png"
+    img_filename = "images/balanar_walk_1.png"
     enemy_img_filename = "images/enemy3.PNG"
     base_track = "sounds/base.ogg"
     
@@ -316,8 +339,8 @@ def game():
     create_ground_rects(ground, current_ground_rects)
     
     enemies = []
-    for i in range (0, 10):
-        enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
+    #for i in range (0, 10):
+    #    enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
     
     offset_count = 0
     
@@ -344,7 +367,7 @@ def game():
             if enemy1.rect.colliderect(balanar.rect):
                 hit_enemy(enemy1)
         #Check for collision between balanar's attack rect and an enemy
-            if enemy1.rect.colliderect(balanar.attack_rect):
+            if enemy1.rect.colliderect(balanar.attack_rect) and balanar.isattacking:
                 balanar_hit(enemy1)
             
         balanar.update(current_ground_rects)
