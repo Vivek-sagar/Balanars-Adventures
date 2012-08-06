@@ -17,13 +17,15 @@ GROUND_UNIT_WIDTH, GROUND_UNIT_HEIGHT = 80, 50
 GROUND_COLOUR = (25, 50, 25)
 HEALTH_BAR_COLOUR = (200, 255, 100)
 
-MOVEMENT_SPEED_INCREMENT = 1.5
+MOVEMENT_SPEED_INCREMENT = 0.5
 BALANAR_MAX_SPEED = 5
-BALANAR_JUMP_SPEED = 20
+BALANAR_JUMP_SPEED = 10
 BALANAR_GRAVITY = 1.5
 SCREEN_PAN_SPEED = 30
 SCREEN_PAN_ZONE = 10
 MAX_SCREEN_OFFSET = 3000     #Changes whenever the number of blocks in level is changed
+
+BALANAR_IMAGE_CHANGE_THRESHOLD = 20
 
 global offset_count         #Meant for the screen movement. Bad naming i know :/
 global move_screen          #Flag to be set if the screen must be panned
@@ -46,6 +48,7 @@ class ball(Sprite):
         self.speed_x, self.speed_y = speed
         self.position = init_position
         self.image =  pygame.image.load(img_filename).convert()
+        #TODO: Should learn to use spritesheets!
         self.image_walk_1 = pygame.image.load("images/balanar_walk_1.png")
         self.image_walk_2 = pygame.image.load("images/balanar_walk_2.png")
         self.image_walk_3 = pygame.image.load("images/balanar_walk_3.png")
@@ -60,6 +63,7 @@ class ball(Sprite):
         self.attack_rect.topleft = self.rect.topleft
         self.rect.inflate(-5, -5)
         self.isgrounded = True
+        self.directionchanged = False
         self.isattacking = 0
         self.walk_state = 1
         self.image_change_threshold = 0
@@ -70,19 +74,20 @@ class ball(Sprite):
         """Updates ball position. Checks for obstacles, causes jumping and allows for falling off edges"""
         
         global move_screen
+        self.directionchanged = False
         #Horizontal Movement
         if self.movement_force != 0:
         	if abs(self.speed_x) <= BALANAR_MAX_SPEED: 
         		self.speed_x += MOVEMENT_SPEED_INCREMENT * self.movement_force
         		#TODO: Definitely a better way to do this!
         		if self.speed_x > 0:
-        		    if self.direction != 1:     #If direction changed
-        		        self.image = pygame.transform.flip(self.image, True, False)
+        		    if self.direction != 1:     #If direction changed (Defunct!)
+        		        self.directionchanged = True
         		    self.direction = 1
         		    
         		elif self.speed_x < 0:
-        		    if self.direction != -1:     #If direction changed
-        		        self.image = pygame.transform.flip(self.image, True, False)
+        		    if self.direction != -1:     #If direction changed (Defunct!)
+        		        self.directionchanged = True
         		    self.direction = -1
         		    
         else:
@@ -129,11 +134,12 @@ class ball(Sprite):
             else:
                 self.isgrounded = False
           
-        if self.image_change_threshold > 20:
+        if self.image_change_threshold > BALANAR_IMAGE_CHANGE_THRESHOLD or self.image_change_threshold < -BALANAR_IMAGE_CHANGE_THRESHOLD:
             self.image_change_threshold = 0      
             self.walk_state = self.walk_state + 1
             if self.walk_state > 4:
                 self.walk_state = 1
+              
         
                     
         #Attacking
@@ -154,13 +160,18 @@ class ball(Sprite):
     def blitme(self, screen):
         """Blits Balanar and his attacking rect onto the screen"""
         if self.walk_state == 1:
-            self.screen.blit(self.image_walk_1, self.rect.topleft)
+            self.image = self.image_walk_1
         elif self.walk_state == 2:
-            self.screen.blit(self.image_walk_2, self.rect.topleft)
+            self.image = self.image_walk_2
         elif self.walk_state == 3:
-            self.screen.blit(self.image_walk_3, self.rect.topleft)
+            self.image = self.image_walk_3
         elif self.walk_state == 4:
-            self.screen.blit(self.image_walk_4, self.rect.topleft)
+            self.image = self.image_walk_4
+        
+        if self.direction == -1:
+            self.image = pygame.transform.flip(self.image, True, False)
+            
+        self.screen.blit(self.image, self.rect.topleft)    
             
         pygame.draw.rect(screen, (0,0,0), self.attack_rect)
         
