@@ -12,15 +12,15 @@ import operator
 # Global Constants
 #------------------------------------------------------------------------
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 400
-BG_COLOUR = 100, 200, 100
+BG_COLOUR = 200, 100, 100
 GROUND_UNIT_WIDTH, GROUND_UNIT_HEIGHT = 80, 50
-GROUND_COLOUR = (25, 50, 25)
+GROUND_COLOUR = (50, 25, 25)
 HEALTH_BAR_COLOUR = (200, 255, 100)
 
 MOVEMENT_SPEED_INCREMENT = 0.5
-BALANAR_MAX_SPEED = 5
-BALANAR_JUMP_SPEED = 10
-BALANAR_GRAVITY = 1.5
+BALANAR_MAX_SPEED = 3
+BALANAR_JUMP_SPEED = 15
+BALANAR_GRAVITY = 1.0
 SCREEN_PAN_SPEED = 30
 SCREEN_PAN_ZONE = 10
 MAX_SCREEN_OFFSET = 3000     #Changes whenever the number of blocks in level is changed
@@ -65,7 +65,7 @@ class ball(Sprite):
         self.isgrounded = True
         self.directionchanged = False
         self.isattacking = 0
-        self.walk_state = 1
+        self.walk_state = 0
         self.image_change_threshold = 0
         self.direction = 1
         self.health = 100
@@ -95,7 +95,9 @@ class ball(Sprite):
         	elif self.speed_x < 0: self.speed_x += MOVEMENT_SPEED_INCREMENT
        
         self.rect = self.rect.move(self.speed_x, 0)
+        
         self.image_change_threshold = self.image_change_threshold + self.speed_x     #To check if the image needs to be changed
+        if self.speed_x == 0: self.walk_state = 0
         for rect in current_ground_rects:
             if self.rect.colliderect(rect):
                 if self.speed_x > 0:
@@ -136,6 +138,7 @@ class ball(Sprite):
                 self.rect.top = rect.bottom
             else:
                 self.isgrounded = False
+                
           
         if self.image_change_threshold > BALANAR_IMAGE_CHANGE_THRESHOLD or self.image_change_threshold < -BALANAR_IMAGE_CHANGE_THRESHOLD:
             self.image_change_threshold = 0      
@@ -162,19 +165,24 @@ class ball(Sprite):
 
     def blitme(self, screen):
         """Blits Balanar and his attacking rect onto the screen"""
-        if self.walk_state == 1:
+        if self.walk_state == 0:
             self.image = self.image_walk_1
-        elif self.walk_state == 2:
+        elif self.walk_state == 1:
             self.image = self.image_walk_2
-        elif self.walk_state == 3:
+        elif self.walk_state == 2:
             self.image = self.image_walk_3
-        elif self.walk_state == 4:
+        elif self.walk_state == 3:
             self.image = self.image_walk_4
+        elif self.walk_state == 4:
+            self.image = self.image_walk_3
+        
         
         if self.direction == -1:
             self.image = pygame.transform.flip(self.image, True, False)
             
-        self.screen.blit(self.image, self.rect.topleft)    
+        self.screen.blit(self.image, self.rect.topleft) 
+        
+        #pygame.draw.rect(screen, (0,0,0), self.rect)   
             
         pygame.draw.rect(screen, (0,0,0), self.attack_rect)
         
@@ -308,13 +316,27 @@ def move_screen_func():
             offset_count = 0
             
 def hit_enemy(enemy):        #For when an enemy hits balanar
-    print (':ok:')
+    pass
+    #print (':ok:')
 
 def balanar_hit(enemy):      #For when Balanar hits an enemy :P
     if enemy.hit_cooldown == 0:
-        enemy.health = enemy.health - 10
+        enemy.health = enemy.health - 60
         enemy.hit_cooldown = 10
-    print ('Oh Yeah!')
+    #print ('Oh Yeah!')
+    
+def load_sound(name):               # The only Proper Exception Handled code right now :|
+    class NoneSound:
+        def play(self): pass
+    if not pygame.mixer or not pygame.mixer.get_init():
+        print "wazzaa"
+        return NoneSound()
+    try:
+        sound = pygame.mixer.Sound(name)
+    except pygame.error, message:
+        print 'Cannot load sound:', name
+        raise SystemExit, message
+    return sound
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -326,7 +348,12 @@ def game():
 
     img_filename = "images/balanar_walk_1.png"
     enemy_img_filename = "images/enemy3.PNG"
-    base_track = "sounds/base.ogg"
+    base_track_1 = "sounds/backtrack1.wav"
+    base_track_2 = "sounds/backtrack2.wav"
+    base_track_3 = "sounds/backtrack3.wav"
+    base_track_4 = "sounds/backtrack4.wav"
+    drum_track_1 = "sounds/drumtrack1.ogg"
+    drum_track_2 = "sounds/drumtrack2.ogg"
     
 
     pygame.init()
@@ -342,8 +369,15 @@ def game():
     move_screen = 0
     screen_offset = 0
     
-    pygame.mixer.music.load(base_track)
-    #pygame.mixer.music.play(-1)
+    pygame.mixer.music.load(base_track_1)       #Not sure if its better to run this as a music loop, or just leave it as a sound object.
+    drum_track_1 = load_sound(drum_track_1)
+    drum_track_2 = load_sound(drum_track_2)
+    #base_track_1 = load_sound(base_track_1)
+    base_track_2 = load_sound(base_track_2)
+    base_track_3 = load_sound(base_track_3)
+    base_track_4 = load_sound(base_track_4)
+    
+    pygame.mixer.music.play(-1)
     
     balanar = ball(screen, img_filename, (100,SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), (0,0))
     
@@ -365,8 +399,8 @@ def game():
     create_ground_rects(ground, current_ground_rects)
     
     enemies = []
-    #for i in range (0, 10):
-    #    enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
+    for i in range (5, 15):
+        enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
     
     offset_count = 0
     
