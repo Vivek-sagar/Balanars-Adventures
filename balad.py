@@ -338,9 +338,9 @@ def load_sound(name):               # The only Proper Exception Handled code rig
         raise SystemExit, message
     return sound
     
-def fill_sound_queue(chnl, drum_track_1):       #TODO: put all the sound object in a list!
+def fill_sound_queue(chnl, loops):       #TODO: put all the sound object in a list!
     if (chnl.get_queue() == None):
-        chnl.queue(drum_track_1)    
+        chnl.queue(loops[4])    
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -380,6 +380,14 @@ def game():
     base_track_2 = load_sound(base_track_2)
     base_track_3 = load_sound(base_track_3)
     base_track_4 = load_sound(base_track_4)
+    
+    loops = []
+    loops.append(base_track_1)
+    loops.append(base_track_2)
+    loops.append(base_track_3)
+    loops.append(base_track_4)
+    loops.append(drum_track_1)
+    loops.append(drum_track_2)
     
     chnl = pygame.mixer.Channel(1)
     
@@ -443,7 +451,7 @@ def game():
             enemy1.update(current_ground_rects, enemies)
             
         #Fill sound queue if required
-        fill_sound_queue(chnl, drum_track_1)
+        fill_sound_queue(chnl, loops)
 
         #Fill background colour
         screen.fill(BG_COLOUR)       
