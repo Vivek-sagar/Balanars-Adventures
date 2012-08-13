@@ -337,6 +337,10 @@ def load_sound(name):               # The only Proper Exception Handled code rig
         print 'Cannot load sound:', name
         raise SystemExit, message
     return sound
+    
+def fill_sound_queue(chnl, drum_track_1):       #TODO: put all the sound object in a list!
+    if (chnl.get_queue() == None):
+        chnl.queue(drum_track_1)    
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -377,7 +381,10 @@ def game():
     base_track_3 = load_sound(base_track_3)
     base_track_4 = load_sound(base_track_4)
     
+    chnl = pygame.mixer.Channel(1)
+    
     pygame.mixer.music.play(-1)
+    chnl.queue(drum_track_1)                    #Starts playing automatically
     
     balanar = ball(screen, img_filename, (100,SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), (0,0))
     
@@ -434,6 +441,9 @@ def game():
         balanar.update(current_ground_rects)
         for enemy1 in enemies:
             enemy1.update(current_ground_rects, enemies)
+            
+        #Fill sound queue if required
+        fill_sound_queue(chnl, drum_track_1)
 
         #Fill background colour
         screen.fill(BG_COLOUR)       
