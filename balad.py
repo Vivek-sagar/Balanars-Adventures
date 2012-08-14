@@ -139,7 +139,7 @@ class ball(Sprite):
             else:
                 self.isgrounded = False
                 
-          
+        #Code to loop through the walking pictures of balanar  
         if self.image_change_threshold > BALANAR_IMAGE_CHANGE_THRESHOLD or self.image_change_threshold < -BALANAR_IMAGE_CHANGE_THRESHOLD:
             self.image_change_threshold = 0      
             self.walk_state = self.walk_state + 1
@@ -232,8 +232,7 @@ class enemy(Sprite):
         if move_screen:
             self.rect = self.rect.move(-(move_screen*SCREEN_PAN_SPEED), 0) 
             
-        #Health Considerations:
-        
+        #Health Considerations:        
         if self.hit_cooldown > 0:
             self.hit_cooldown = self.hit_cooldown - 1
         if self.health < 0:
@@ -258,6 +257,8 @@ def EventHandler(balanar):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
+        if event.type == pygame.locals.USEREVENT:
+            print("done")
         if event.type == KEYDOWN:
             if event.key == K_q:
                 pygame.quit()
@@ -338,9 +339,20 @@ def load_sound(name):               # The only Proper Exception Handled code rig
         raise SystemExit, message
     return sound
     
-def fill_sound_queue(chnl, loops):       #TODO: put all the sound object in a list!
-    if (chnl.get_queue() == None):
-        chnl.queue(loops[4])    
+def fill_sound_queue(chnl, loops, enemies):
+    enemy_count = 0
+    for enemy in enemies:
+        if (enemy.rect.left < SCREEN_WIDTH) and (enemy.rect.right > 0):
+            enemy_count = enemy_count + 1
+    
+    if enemy_count > 5:
+        chnl.queue(loops[4])
+    elif enemy_count > 3:
+        chnl.queue(loops[3])
+    elif enemy_count > 0:
+        chnl.queue(loops[2])
+    else:
+        chnl.queue(loops[0])
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -352,6 +364,7 @@ def game():
 
     img_filename = "images/balanar_walk_1.png"
     enemy_img_filename = "images/enemy3.PNG"
+    dummy_track = "sounds/empty.wav"
     base_track_1 = "sounds/backtrack1.wav"
     base_track_2 = "sounds/backtrack2.wav"
     base_track_3 = "sounds/backtrack3.wav"
@@ -374,14 +387,16 @@ def game():
     screen_offset = 0
     
     pygame.mixer.music.load(base_track_1)       #Not sure if its better to run this as a music loop, or just leave it as a sound object.
+    dummy_track = load_sound(dummy_track)
     drum_track_1 = load_sound(drum_track_1)
     drum_track_2 = load_sound(drum_track_2)
-    #base_track_1 = load_sound(base_track_1)
+    base_track_1 = load_sound(base_track_1)
     base_track_2 = load_sound(base_track_2)
     base_track_3 = load_sound(base_track_3)
     base_track_4 = load_sound(base_track_4)
     
     loops = []
+    loops.append(dummy_track)
     loops.append(base_track_1)
     loops.append(base_track_2)
     loops.append(base_track_3)
@@ -390,9 +405,11 @@ def game():
     loops.append(drum_track_2)
     
     chnl = pygame.mixer.Channel(1)
-    
-    pygame.mixer.music.play(-1)
-    chnl.queue(drum_track_1)                    #Starts playing automatically
+    base_chnl = pygame.mixer.Channel(2)
+    chnl.set_endevent(pygame.locals.USEREVENT)        
+    base_chnl.play(base_track_1, -1)                   #Starts playing automatically
+    chnl.queue(base_track_1)
+    #print chnl.get_length()
     
     balanar = ball(screen, img_filename, (100,SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), (0,0))
     
@@ -414,7 +431,7 @@ def game():
     create_ground_rects(ground, current_ground_rects)
     
     enemies = []
-    for i in range (5, 15):
+    for i in range (15, 20):
         enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
     
     offset_count = 0
@@ -451,7 +468,7 @@ def game():
             enemy1.update(current_ground_rects, enemies)
             
         #Fill sound queue if required
-        fill_sound_queue(chnl, loops)
+        fill_sound_queue(chnl, loops, enemies )
 
         #Fill background colour
         screen.fill(BG_COLOUR)       
