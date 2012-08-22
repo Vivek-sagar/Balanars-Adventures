@@ -49,11 +49,10 @@ class ball(Sprite):
         self.position = init_position
         self.image =  pygame.image.load(img_filename).convert()
         #TODO: Should learn to use spritesheets!
-        self.image_walk_1 = pygame.image.load("images/balanar_walk_1.png")
-        self.image_walk_2 = pygame.image.load("images/balanar_walk_2.png")
-        self.image_walk_3 = pygame.image.load("images/balanar_walk_3.png")
-        self.image_walk_4 = pygame.image.load("images/balanar_walk_4.png")
-        self.rect = self.image.get_rect()
+        self.image_walk_1 = pygame.image.load("images/BaladSprites/bala_side_2.png")
+        self.image_walk_2 = pygame.image.load("images/BaladSprites/bala_side_1.png")
+        self.image_walk_3 = pygame.image.load("images/BaladSprites/bala_side_3.png")
+        self.rect = self.image_walk_1.get_rect()
         #self.image.set_colorkey((255, 248, 255))   #Required only if the image isnt transparent
         self.attack_rect = pygame.Rect(0,0,0,0)
         self.attack_rect.width, self.attack_rect.height = 0, self.rect.height
@@ -143,7 +142,7 @@ class ball(Sprite):
         if self.image_change_threshold > BALANAR_IMAGE_CHANGE_THRESHOLD or self.image_change_threshold < -BALANAR_IMAGE_CHANGE_THRESHOLD:
             self.image_change_threshold = 0      
             self.walk_state = self.walk_state + 1
-            if self.walk_state > 4:
+            if self.walk_state > 3:
                 self.walk_state = 1
               
         
@@ -170,10 +169,8 @@ class ball(Sprite):
         elif self.walk_state == 1:
             self.image = self.image_walk_2
         elif self.walk_state == 2:
-            self.image = self.image_walk_3
+            self.image = self.image_walk_1
         elif self.walk_state == 3:
-            self.image = self.image_walk_4
-        elif self.walk_state == 4:
             self.image = self.image_walk_3
         
         
@@ -339,7 +336,7 @@ def load_sound(name):               # The only Proper Exception Handled code rig
         raise SystemExit, message
     return sound
     
-def fill_sound_queue(chnl, loops, enemies):
+def fill_sound_queue(chnl, drum_chnl, loops, enemies):
     enemy_count = 0
     for enemy in enemies:
         if (enemy.rect.left < SCREEN_WIDTH) and (enemy.rect.right > 0):
@@ -347,12 +344,16 @@ def fill_sound_queue(chnl, loops, enemies):
     
     if enemy_count > 5:
         chnl.queue(loops[4])
+        drum_chnl.queue(loops[6])
     elif enemy_count > 3:
         chnl.queue(loops[3])
+        drum_chnl.queue(loops[5])
     elif enemy_count > 0:
         chnl.queue(loops[2])
+        drum_chnl.queue(loops[5])
     else:
         chnl.queue(loops[0])
+        drum_chnl.queue(loops[0])
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -364,7 +365,7 @@ def game():
 
     img_filename = "images/balanar_walk_1.png"
     enemy_img_filename = "images/enemy3.PNG"
-    dummy_track = "sounds/empty.wav"
+    dummy_track = "sounds/empty.ogg"
     base_track_1 = "sounds/backtrack1.wav"
     base_track_2 = "sounds/backtrack2.wav"
     base_track_3 = "sounds/backtrack3.wav"
@@ -406,9 +407,11 @@ def game():
     
     chnl = pygame.mixer.Channel(1)
     base_chnl = pygame.mixer.Channel(2)
+    drum_chnl = pygame.mixer.Channel(3)
     chnl.set_endevent(pygame.locals.USEREVENT)        
     base_chnl.play(base_track_1, -1)                   #Starts playing automatically
-    chnl.queue(base_track_1)
+    chnl.queue(dummy_track)
+    drum_chnl.queue(dummy_track)
     #print chnl.get_length()
     
     balanar = ball(screen, img_filename, (100,SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), (0,0))
@@ -431,7 +434,7 @@ def game():
     create_ground_rects(ground, current_ground_rects)
     
     enemies = []
-    for i in range (15, 20):
+    for i in range (15, 21):
         enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
     
     offset_count = 0
@@ -468,7 +471,7 @@ def game():
             enemy1.update(current_ground_rects, enemies)
             
         #Fill sound queue if required
-        fill_sound_queue(chnl, loops, enemies )
+        fill_sound_queue(chnl, drum_chnl, loops, enemies )
 
         #Fill background colour
         screen.fill(BG_COLOUR)       
