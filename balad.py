@@ -12,7 +12,7 @@ import operator
 # Global Constants
 #------------------------------------------------------------------------
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 400
-BG_COLOUR = 200, 100, 100
+BG_COLOUR = 200, 200, 200
 GROUND_UNIT_WIDTH, GROUND_UNIT_HEIGHT = 80, 50
 GROUND_COLOUR = (50, 25, 25)
 HEALTH_BAR_COLOUR = (200, 255, 100)
@@ -25,7 +25,7 @@ SCREEN_PAN_SPEED = 30
 SCREEN_PAN_ZONE = 10
 MAX_SCREEN_OFFSET = 3000     #Changes whenever the number of blocks in level is changed
 
-BALANAR_IMAGE_CHANGE_THRESHOLD = 20
+BALANAR_IMAGE_CHANGE_THRESHOLD = 15
 
 global offset_count         #Meant for the screen movement. Bad naming i know :/
 global move_screen          #Flag to be set if the screen must be panned
@@ -39,20 +39,22 @@ class ball(Sprite):
     image = None
     movement_force = 0
     isjumping = False
+    
 
-    def __init__(self, screen, img_filename, init_position, speed):
+    def __init__(self, screen, init_position, speed):
         """Initialise the ball"""
         
         Sprite.__init__(self)
         self.screen = screen
         self.speed_x, self.speed_y = speed
         self.position = init_position
-        #self.image =  pygame.image.load(img_filename).convert()
         #TODO: Should learn to use spritesheets!
-        self.image_walk_1 = pygame.image.load("images/BaladSprites/bala_side_2.png")
-        self.image_walk_2 = pygame.image.load("images/BaladSprites/bala_side_1.png")
-        self.image_walk_3 = pygame.image.load("images/BaladSprites/bala_side_3.png")
-        self.rect = self.image_walk_1.get_rect()
+        image_walk_1 = pygame.image.load("images/BaladSprites/bala_side_2.png")
+        image_walk_2 = pygame.image.load("images/BaladSprites/bala_side_1.png")
+        image_walk_3 = pygame.image.load("images/BaladSprites/bala_side_3.png")
+        image_attack_1 = pygame.image.load("images/BaladSprites/bala_attack_1.png")
+        image_attack_2 = pygame.image.load("images/BaladSprites/bala_attack_2.png")
+        self.rect = image_walk_1.get_rect()
         #self.image.set_colorkey((255, 248, 255))   #Required only if the image isnt transparent
         self.attack_rect = pygame.Rect(0,0,0,0)
         self.attack_rect.width, self.attack_rect.height = 0, self.rect.height
@@ -64,11 +66,15 @@ class ball(Sprite):
         self.isgrounded = True
         self.directionchanged = False
         self.isattacking = 0
-        self.walk_state = 0
         self.image_change_threshold = 0
         self.direction = 1
         self.health = 100
-
+        self.states = {0 : image_walk_1, 
+                       1 : image_walk_2, 
+                       2 : image_walk_3,
+                       3 : image_attack_1,
+                       4 : image_attack_2}
+        self.state = 0
     def update(self, current_ground_rects):
         """Updates ball position. Checks for obstacles, causes jumping and allows for falling off edges"""
         
@@ -96,7 +102,7 @@ class ball(Sprite):
         self.rect = self.rect.move(self.speed_x, 0)
         
         self.image_change_threshold = self.image_change_threshold + self.speed_x     #To check if the image needs to be changed
-        if self.speed_x == 0: self.walk_state = 0
+        if self.speed_x == 0: self.state = 0
         for rect in current_ground_rects:
             if self.rect.colliderect(rect):
                 if self.speed_x > 0:
@@ -141,17 +147,20 @@ class ball(Sprite):
         #Code to loop through the walking pictures of balanar  
         if self.image_change_threshold > BALANAR_IMAGE_CHANGE_THRESHOLD or self.image_change_threshold < -BALANAR_IMAGE_CHANGE_THRESHOLD:
             self.image_change_threshold = 0      
-            self.walk_state = self.walk_state + 1
-            if self.walk_state > 3:
-                self.walk_state = 1
+            self.state = self.state + 1
+            if self.state > 2:
+                self.state = 0
               
         
                     
         #Attacking
         if self.isattacking:
             self.isattacking = self.isattacking + 1
+            self.state = 3
             self.attack_rect.width = 5*self.isattacking
-            if (self.isattacking > 10):
+            if self.isattacking > 5:
+                self.state = 4
+            if self.isattacking > 10:
                 self.attack_rect.width = 0
                 self.isattacking = 0
                 
@@ -164,24 +173,15 @@ class ball(Sprite):
 
     def blitme(self, screen):
         """Blits Balanar and his attacking rect onto the screen"""
-        if self.walk_state == 0:
-            self.image = self.image_walk_1
-        elif self.walk_state == 1:
-            self.image = self.image_walk_2
-        elif self.walk_state == 2:
-            self.image = self.image_walk_1
-        elif self.walk_state == 3:
-            self.image = self.image_walk_3
-        
-        
+        self.image = self.states[self.state]
+              
         if self.direction == -1:
             self.image = pygame.transform.flip(self.image, True, False)
             
         self.screen.blit(self.image, self.rect.topleft) 
         
-        #pygame.draw.rect(screen, (0,0,0), self.rect)   
-            
-        pygame.draw.rect(screen, (0,0,0), self.attack_rect)
+        #pygame.draw.rect(screen, (0,0,0), self.rect)              
+        #pygame.draw.rect(screen, (0,0,0), self.attack_rect)
         
 class enemy(Sprite):
 
@@ -189,14 +189,30 @@ class enemy(Sprite):
         """Initialiser for all enemies"""        
         self.screen = screen
         self.position = init_position
-        self.image =  pygame.image.load(img_filename).convert()
-        self.rect = self.image.get_rect()
+        #self.image =  pygame.image.load(img_filename).convert()
+        
         self.speed = speed
         self.direction = -1
         self.health = 100 
-        self.image.set_colorkey((255, 255, 255))     
+        #self.image.set_colorkey((255, 255, 255))     
         self.hit_cooldown = 0
+        self.isattacking = 0
+        
+        self.image_change_threshold = 0
+        image_walk_1 = pygame.image.load("images/BaladSprites/axeguy1.png")
+        image_walk_2 = pygame.image.load("images/BaladSprites/axeguy3.png")
+        image_walk_3 = pygame.image.load("images/BaladSprites/axeguy4.png")
+        
+        self.states = {0 : image_walk_1, 
+                  1 : image_walk_2, 
+                  2 : image_walk_3}
+        self.state = 0
+        
+        self.rect = self.states[0].get_rect()
         self.rect = self.rect.move(init_position)
+        self.attack_rect = pygame.Rect(0,0,0,0)
+        self.attack_rect.h = self.rect.h
+        
         #Lifts the enemy onto ground level
         for rects in ground_rects:
             if self.rect.colliderect(rects):
@@ -204,30 +220,33 @@ class enemy(Sprite):
         
     def update(self, ground_rects, enemies):
         """Updates enemy position, checking for obstacles and allowing for screen panning""" 
-        #TODO: Update position only if the creep is within the screen!
+        
+        if move_screen:
+            self.rect = self.rect.move(-(move_screen*SCREEN_PAN_SPEED), 0) 
+            
+        if self.rect.left > SCREEN_WIDTH or self.rect.right < 0:
+            return
+        
         self.rect = self.rect.move(self.direction*self.speed, 0);
+        self.image_change_threshold = self.image_change_threshold + self.direction*self.speed     #To check if the image needs to be changed
         for rect in ground_rects:
             if self.rect.colliderect(rect):
                 if self.direction > 0:
                     self.rect.right = rect.left
                 else:
                     self.rect.left = rect.right
-                self.image = pygame.transform.flip(self.image, True, False)
                 self.direction = -self.direction
                 
             if self.rect.left < rect.right and rect.right - self.rect.left < GROUND_UNIT_WIDTH:
                 if self.rect.bottom < rect.top - 5:
-                    self.image = pygame.transform.flip(self.image, True, False)
                     self.direction = -self.direction
                     self.rect.left = rect.right
             elif self.rect.right > rect.left and self.rect.right - rect.left < GROUND_UNIT_WIDTH:
                 if self.rect.bottom < rect.top - 5:
-                    self.image = pygame.transform.flip(self.image, True, False)
                     self.direction = -self.direction
                     self.rect.right = rect.left
 
-        if move_screen:
-            self.rect = self.rect.move(-(move_screen*SCREEN_PAN_SPEED), 0) 
+        
             
         #Health Considerations:        
         if self.hit_cooldown > 0:
@@ -236,12 +255,41 @@ class enemy(Sprite):
             #Destroy!!
             enemies.remove(self)
             self.health = 0
-        
+            
+        #Code to loop through the walking pictures of enemy:  
+        if self.image_change_threshold > BALANAR_IMAGE_CHANGE_THRESHOLD or self.image_change_threshold < -BALANAR_IMAGE_CHANGE_THRESHOLD:
+            self.image_change_threshold = 0      
+            self.state = self.state + 1
+            if self.state > 2:
+                self.state = 0
+                
+        #Attack rect:
+        if self.direction == 1:
+            self.attack_rect.topleft = self.rect.topright
+        elif self.direction == -1:
+            self.attack_rect.topright = self.rect.topleft
+            
+        #Attacking
+        if self.isattacking:
+            self.isattacking = self.isattacking + 1
+            self.state = 1
+            self.attack_rect.width = 5*self.isattacking
+            if self.isattacking > 5:
+                self.state = 1
+            if self.isattacking > 10:
+                self.attack_rect.width = 0
+                self.isattacking = 0
                     
         
     def blitme(self, screen):
         """Blits the enemy onto the screen"""
+        self.image = self.states[self.state]
+              
+        if self.direction == 1:
+            self.image = pygame.transform.flip(self.image, True, False)
+        
         self.screen.blit(self.image, self.rect.topleft)
+        #pygame.draw.rect(screen, (0,0,0), self.attack_rect)
         pygame.draw.rect(screen, HEALTH_BAR_COLOUR, pygame.Rect(self.rect.left, self.rect.top-20, self.rect.width*(self.health/100.0), 10))
         
 
@@ -279,7 +327,7 @@ def blit_ground (screen, current_ground_rects, texture):
     for rect in current_ground_rects:
         pygame.draw.rect(screen, GROUND_COLOUR, rect)
         cursor = Rect(rect)
-        while (cursor.top < SCREEN_HEIGHT):         #TODO: Take care of clouds!
+        while (cursor.top < rect.bottom):         #TODO: Take care of clouds!
             screen.blit(texture, cursor)
             cursor.top += GROUND_UNIT_HEIGHT
          
@@ -346,7 +394,7 @@ def fill_sound_queue(chnl, drum_chnl, loops, enemies):
             enemy_count = enemy_count + 1
     
     if enemy_count > 5:
-        chnl.queue(loops[4])
+        chnl.queue(loops[3])
         drum_chnl.queue(loops[6])
     elif enemy_count > 3:
         chnl.queue(loops[3])
@@ -366,7 +414,6 @@ def game():
 
     #-------------------------Game Initialization-------------------------
 
-    img_filename = "images/balanar_walk_1.png"
     enemy_img_filename = "images/enemy3.PNG"
     dummy_track = "sounds/empty.ogg"
     base_track_1 = "sounds/backtrack1.wav"
@@ -418,7 +465,7 @@ def game():
     drum_chnl.queue(dummy_track)
     #print chnl.get_length()
     
-    balanar = ball(screen, img_filename, (100,SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), (0,0))
+    balanar = ball(screen, (100,SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), (0,0))
     
     filestream = open('level', 'r')
     
@@ -438,8 +485,8 @@ def game():
     create_ground_rects(ground, current_ground_rects)
     
     enemies = []
-    for i in range (15, 21):
-        enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
+    for i in range (10, 21):
+        enemies.append(enemy(screen, enemy_img_filename, (i*100-100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
     
     offset_count = 0
     
