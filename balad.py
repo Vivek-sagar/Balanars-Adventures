@@ -47,7 +47,7 @@ class ball(Sprite):
         self.screen = screen
         self.speed_x, self.speed_y = speed
         self.position = init_position
-        self.image =  pygame.image.load(img_filename).convert()
+        #self.image =  pygame.image.load(img_filename).convert()
         #TODO: Should learn to use spritesheets!
         self.image_walk_1 = pygame.image.load("images/BaladSprites/bala_side_2.png")
         self.image_walk_2 = pygame.image.load("images/BaladSprites/bala_side_1.png")
@@ -274,10 +274,14 @@ def EventHandler(balanar):
            	elif event.key == K_RIGHT:
            		balanar.movement_force = 0
 
-def blit_ground (screen, current_ground_rects):
+def blit_ground (screen, current_ground_rects, texture):
     """ Blits the ground based on current_ground_rects"""    
     for rect in current_ground_rects:
         pygame.draw.rect(screen, GROUND_COLOUR, rect)
+        cursor = Rect(rect)
+        while (cursor.top < SCREEN_HEIGHT):         #TODO: Take care of clouds!
+            screen.blit(texture, cursor)
+            cursor.top += GROUND_UNIT_HEIGHT
          
 def create_ground_rects(ground, current_ground_rects):
     """Creates the actual ground object consisting of all rects"""
@@ -327,7 +331,6 @@ def load_sound(name):               # The only Proper Exception Handled code rig
     class NoneSound:
         def play(self): pass
     if not pygame.mixer or not pygame.mixer.get_init():
-        print "wazzaa"
         return NoneSound()
     try:
         sound = pygame.mixer.Sound(name)
@@ -372,12 +375,13 @@ def game():
     base_track_4 = "sounds/backtrack4.wav"
     drum_track_1 = "sounds/drumtrack1.ogg"
     drum_track_2 = "sounds/drumtrack2.ogg"
+    texture = pygame.image.load("images/BaladSprites/stone_texture.png")
     
 
     pygame.init()
     pygame.mixer.init()
     screen = pygame.display.set_mode ((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
-    
+ 
     clock = pygame.time.Clock()
     
     global move_screen
@@ -477,7 +481,7 @@ def game():
         screen.fill(BG_COLOUR)       
 
         #Blit all objects to screen
-        blit_ground(screen, current_ground_rects)
+        blit_ground(screen, current_ground_rects, texture)
         for enemy1 in enemies:
             enemy1.blitme(screen)
         balanar.blitme(screen)
