@@ -25,11 +25,12 @@ SCREEN_PAN_SPEED = 30
 SCREEN_PAN_ZONE = 10
 MAX_SCREEN_OFFSET = 3000     #Changes whenever the number of blocks in level is changed
 
-BALANAR_IMAGE_CHANGE_THRESHOLD = 15
+BALANAR_IMAGE_CHANGE_THRESHOLD = 20
 
 global offset_count         #Meant for the screen movement. Bad naming i know :/
 global move_screen          #Flag to be set if the screen must be panned
 global screen_offset        #Keeps track of the current offset of the screen
+
 #------------------------------------------------------------------------
 # Class Definitions
 #------------------------------------------------------------------------
@@ -120,10 +121,17 @@ class ball(Sprite):
         elif self.rect.left <= SCREEN_PAN_ZONE:
             move_screen = -1
         
+        #Code to loop through the walking pictures of balanar  
+        if self.image_change_threshold > BALANAR_IMAGE_CHANGE_THRESHOLD or self.image_change_threshold < -BALANAR_IMAGE_CHANGE_THRESHOLD:
+            self.image_change_threshold = 0      
+            self.state = self.state + 1
+            if self.state > 3:
+                self.state = 0
         
         
         #Vertical Movement	
         if self.isjumping == True:
+            self.state = 0
             if self.isgrounded == True:
                 self.isgrounded = False
                 self.speed_y = BALANAR_JUMP_SPEED + BALANAR_GRAVITY #BALANAR_GRAVITY is added straight away because it will get cancelled in the next line
@@ -143,23 +151,16 @@ class ball(Sprite):
                 self.rect.top = rect.bottom
             else:
                 self.isgrounded = False
-                
-        #Code to loop through the walking pictures of balanar  
-        if self.image_change_threshold > BALANAR_IMAGE_CHANGE_THRESHOLD or self.image_change_threshold < -BALANAR_IMAGE_CHANGE_THRESHOLD:
-            self.image_change_threshold = 0      
-            self.state = self.state + 1
-            if self.state > 2:
-                self.state = 0
               
         
                     
         #Attacking
         if self.isattacking:
             self.isattacking = self.isattacking + 1
-            self.state = 3
+            self.state = 4
             self.attack_rect.width = 5*self.isattacking
             if self.isattacking > 5:
-                self.state = 4
+                self.state = 5
             if self.isattacking > 10:
                 self.attack_rect.width = 0
                 self.isattacking = 0
@@ -173,7 +174,18 @@ class ball(Sprite):
 
     def blitme(self, screen):
         """Blits Balanar and his attacking rect onto the screen"""
-        self.image = self.states[self.state]
+        if self.state == 0:
+            self.image = self.states[0]
+        elif self.state == 1:
+            self.image = self.states[1]
+        elif self.state == 2:
+            self.image = self.states[0]
+        elif self.state == 3:
+            self.image = self.states[2]
+        elif self.state == 4:
+            self.image = self.states[3]
+        elif self.state == 5:
+            self.image = self.states[4]
               
         if self.direction == -1:
             self.image = pygame.transform.flip(self.image, True, False)
@@ -202,10 +214,16 @@ class enemy(Sprite):
         image_walk_1 = pygame.image.load("images/BaladSprites/axeguy1.png")
         image_walk_2 = pygame.image.load("images/BaladSprites/axeguy3.png")
         image_walk_3 = pygame.image.load("images/BaladSprites/axeguy4.png")
+        image_attack_1 = pygame.image.load("images/BaladSprites/axeguyattack1.png")
+        image_attack_2 = pygame.image.load("images/BaladSprites/axeguyattack2.png")
+        image_attack_3 = pygame.image.load("images/BaladSprites/axeguyattack3.png")
         
         self.states = {0 : image_walk_1, 
                   1 : image_walk_2, 
-                  2 : image_walk_3}
+                  2 : image_walk_3,
+                  3 : image_attack_1,
+                  4 : image_attack_2,
+                  5 : image_attack_3}
         self.state = 0
         
         self.rect = self.states[0].get_rect()
@@ -218,7 +236,7 @@ class enemy(Sprite):
             if self.rect.colliderect(rects):
                 self.rect.bottom = rects.top
         
-    def update(self, ground_rects, enemies):
+    def update(self, ground_rects, enemies, balanar):
         """Updates enemy position, checking for obstacles and allowing for screen panning""" 
         
         if move_screen:
@@ -227,24 +245,36 @@ class enemy(Sprite):
         if self.rect.left > SCREEN_WIDTH or self.rect.right < 0:
             return
         
-        self.rect = self.rect.move(self.direction*self.speed, 0);
-        self.image_change_threshold = self.image_change_threshold + self.direction*self.speed     #To check if the image needs to be changed
-        for rect in ground_rects:
-            if self.rect.colliderect(rect):
-                if self.direction > 0:
-                    self.rect.right = rect.left
-                else:
-                    self.rect.left = rect.right
-                self.direction = -self.direction
+        #If Enemy is currently attacking, dont move!    
+        if not self.isattacking:
+            if self.direction == 1:
+                if balanar.rect.left < self.rect.right + 50 and balanar.rect.left > self.rect.right:
+                    self.isattacking = True
+            elif self.direction == -1:
+                if balanar.rect.right > self.rect.left - 50 and balanar.rect.right < self.rect.left:
+                    self.isattacking = True
+                    
+        #If not, move!    
+        if not self.isattacking:
+            self.rect = self.rect.move(self.direction*self.speed, 0);
+            self.image_change_threshold = self.image_change_threshold + self.direction*self.speed     #To check if the image needs to be changed
+            
+            for rect in ground_rects:
+                if self.rect.colliderect(rect):
+                    if self.direction > 0:
+                        self.rect.right = rect.left
+                    else:
+                        self.rect.left = rect.right
+                    self.direction = -self.direction
                 
-            if self.rect.left < rect.right and rect.right - self.rect.left < GROUND_UNIT_WIDTH:
-                if self.rect.bottom < rect.top - 5:
-                    self.direction = -self.direction
-                    self.rect.left = rect.right
-            elif self.rect.right > rect.left and self.rect.right - rect.left < GROUND_UNIT_WIDTH:
-                if self.rect.bottom < rect.top - 5:
-                    self.direction = -self.direction
-                    self.rect.right = rect.left
+                if self.rect.left < rect.right and rect.right - self.rect.left < GROUND_UNIT_WIDTH:
+                    if self.rect.bottom < rect.top - 5:
+                        self.direction = -self.direction
+                        self.rect.left = rect.right
+                elif self.rect.right > rect.left and self.rect.right - rect.left < GROUND_UNIT_WIDTH:
+                    if self.rect.bottom < rect.top - 5:
+                        self.direction = -self.direction
+                        self.rect.right = rect.left
 
         
             
@@ -268,15 +298,20 @@ class enemy(Sprite):
             self.attack_rect.topleft = self.rect.topright
         elif self.direction == -1:
             self.attack_rect.topright = self.rect.topleft
-            
-        #Attacking
+          
+        #Attacking              
         if self.isattacking:
             self.isattacking = self.isattacking + 1
             self.state = 1
-            self.attack_rect.width = 5*self.isattacking
-            if self.isattacking > 5:
-                self.state = 1
-            if self.isattacking > 10:
+            if self.isattacking < 10:
+                self.attack_rect.width = 5*self.isattacking
+            if self.isattacking < 5:
+                self.state = 3
+            elif self.isattacking < 10:
+                self.state = 4
+            elif self.isattacking < 15:
+                self.state = 5
+            if self.isattacking > 100:
                 self.attack_rect.width = 0
                 self.isattacking = 0
                     
@@ -321,13 +356,17 @@ def EventHandler(balanar):
            		balanar.movement_force = 0
            	elif event.key == K_RIGHT:
            		balanar.movement_force = 0
+           		
+#-------------------------------------------------------------------------
+# Misc Functions
+#-------------------------------------------------------------------------
 
 def blit_ground (screen, current_ground_rects, texture):
     """ Blits the ground based on current_ground_rects"""    
     for rect in current_ground_rects:
         pygame.draw.rect(screen, GROUND_COLOUR, rect)
         cursor = Rect(rect)
-        while (cursor.top < rect.bottom):         #TODO: Take care of clouds!
+        while (cursor.top < rect.bottom):
             screen.blit(texture, cursor)
             cursor.top += GROUND_UNIT_HEIGHT
          
@@ -371,7 +410,7 @@ def hit_enemy(enemy):        #For when an enemy hits balanar
 
 def balanar_hit(enemy):      #For when Balanar hits an enemy :P
     if enemy.hit_cooldown == 0:
-        enemy.health = enemy.health - 60
+        enemy.health = enemy.health - 40
         enemy.hit_cooldown = 10
     #print ('Oh Yeah!')
     
@@ -485,8 +524,8 @@ def game():
     create_ground_rects(ground, current_ground_rects)
     
     enemies = []
-    for i in range (10, 21):
-        enemies.append(enemy(screen, enemy_img_filename, (i*100-100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
+    for i in range (5, 16):
+        enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
     
     offset_count = 0
     
@@ -519,7 +558,7 @@ def game():
             
         balanar.update(current_ground_rects)
         for enemy1 in enemies:
-            enemy1.update(current_ground_rects, enemies)
+            enemy1.update(current_ground_rects, enemies, balanar)
             
         #Fill sound queue if required
         fill_sound_queue(chnl, drum_chnl, loops, enemies )
