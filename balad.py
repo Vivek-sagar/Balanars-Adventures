@@ -327,11 +327,11 @@ class enemy(Sprite):
             self.state = 1
             if self.isattacking < 10:
                 self.attack_rect.width = 5*self.isattacking
-            if self.isattacking < 15:
+            if self.isattacking < 5:
                 self.state = 3
-            elif self.isattacking < 30:
+            elif self.isattacking < 10:
                 self.state = 4
-            elif self.isattacking < 45:
+            elif self.isattacking < 15:
                 self.state = 5
             if self.isattacking > 100:
                 self.attack_rect.width = 0
@@ -430,9 +430,8 @@ def move_screen_func():
             move_screen = 0
             offset_count = 0
             
-def hit_enemy(enemy):        #For when an enemy hits balanar
+def hit_enemy(enemy, balanar):        #For when an enemy hits balanar
     pass
-    #print (':ok:')
 
 def balanar_hit(enemy):      #For when Balanar hits an enemy :P
     if enemy.hit_cooldown == 0:
