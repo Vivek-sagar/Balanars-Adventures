@@ -75,6 +75,11 @@ class ball(Sprite):
                        2 : image_walk_3,
                        3 : image_attack_1,
                        4 : image_attack_2}
+        self.image_differences = {0 : 0,
+                            1 : image_walk_2.get_width() - image_walk_1.get_width(),
+                            2 : image_walk_3.get_width() - image_walk_1.get_width(),
+                            3 : image_attack_1.get_width() - image_walk_1.get_width(),
+                            4 : image_attack_2.get_width() - image_walk_1.get_width()}
         self.state = 0
     def update(self, current_ground_rects):
         """Updates ball position. Checks for obstacles, causes jumping and allows for falling off edges"""
@@ -174,23 +179,33 @@ class ball(Sprite):
 
     def blitme(self, screen):
         """Blits Balanar and his attacking rect onto the screen"""
+        
+        
+        shift = 0
         if self.state == 0:
             self.image = self.states[0]
         elif self.state == 1:
             self.image = self.states[1]
+            shift = self.image_differences[1]
         elif self.state == 2:
             self.image = self.states[0]
+            shift = self.image_differences[0]
         elif self.state == 3:
             self.image = self.states[2]
+            shift = self.image_differences[2]
         elif self.state == 4:
             self.image = self.states[3]
+            shift = self.image_differences[3]
         elif self.state == 5:
             self.image = self.states[4]
-              
-        if self.direction == -1:
-            self.image = pygame.transform.flip(self.image, True, False)
+            shift = self.image_differences[4]
             
-        self.screen.blit(self.image, self.rect.topleft) 
+        self.image = pygame.transform.flip(self.image, True, False)     #Balanar is the only one facing the other way in the beginning :/  #TODO: Should probably change the image
+        if self.direction == 1:
+            self.image = pygame.transform.flip(self.image, True, False)
+            shift = 0
+            
+        self.screen.blit(self.image, (self.rect.left-shift, self.rect.top)) 
         
         #pygame.draw.rect(screen, (0,0,0), self.rect)              
         #pygame.draw.rect(screen, (0,0,0), self.attack_rect)
@@ -225,6 +240,13 @@ class enemy(Sprite):
                   4 : image_attack_2,
                   5 : image_attack_3}
         self.state = 0
+        
+        self.image_differences = {0 : 0,
+                            1 : image_walk_2.get_width() - image_walk_1.get_width(),
+                            2 : image_walk_3.get_width() - image_walk_1.get_width(),
+                            3 : -(image_attack_1.get_width() - image_walk_1.get_width()),
+                            4 : image_attack_2.get_width() - image_walk_1.get_width(),
+                            5 : image_attack_3.get_width() - image_walk_1.get_width()}
         
         self.rect = self.states[0].get_rect()
         self.rect = self.rect.move(init_position)
@@ -305,11 +327,11 @@ class enemy(Sprite):
             self.state = 1
             if self.isattacking < 10:
                 self.attack_rect.width = 5*self.isattacking
-            if self.isattacking < 5:
+            if self.isattacking < 15:
                 self.state = 3
-            elif self.isattacking < 10:
+            elif self.isattacking < 30:
                 self.state = 4
-            elif self.isattacking < 15:
+            elif self.isattacking < 45:
                 self.state = 5
             if self.isattacking > 100:
                 self.attack_rect.width = 0
@@ -319,11 +341,15 @@ class enemy(Sprite):
     def blitme(self, screen):
         """Blits the enemy onto the screen"""
         self.image = self.states[self.state]
-              
+        shift = self.image_differences[self.state]
+        
         if self.direction == 1:
             self.image = pygame.transform.flip(self.image, True, False)
-        
-        self.screen.blit(self.image, self.rect.topleft)
+            if shift > 0: shift = 0
+            #self.screen.blit(self.image, self.rect.topleft)
+        else:    
+            if shift < 0: shift = 0                             #To take care of the sword going the other way
+        self.screen.blit(self.image, (self.rect.left + (self.direction*shift), self.rect.top))
         #pygame.draw.rect(screen, (0,0,0), self.attack_rect)
         pygame.draw.rect(screen, HEALTH_BAR_COLOUR, pygame.Rect(self.rect.left, self.rect.top-20, self.rect.width*(self.health/100.0), 10))
         
