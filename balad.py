@@ -67,6 +67,7 @@ class ball(Sprite):
         self.isgrounded = True
         self.directionchanged = False
         self.isattacking = 0
+        self.hit_cooldown = 0
         self.image_change_threshold = 0
         self.direction = 1
         self.health = 100
@@ -157,7 +158,12 @@ class ball(Sprite):
             else:
                 self.isgrounded = False
               
-        
+        #Health Considerations:        
+        if self.hit_cooldown > 0:
+            self.hit_cooldown = self.hit_cooldown - 1
+        if self.health < 0:
+            #Game Over!
+            self.health = 0
                     
         #Attacking
         if self.isattacking:
@@ -270,10 +276,10 @@ class enemy(Sprite):
         #If Enemy is currently attacking, dont move!    
         if not self.isattacking:
             if self.direction == 1:
-                if balanar.rect.left < self.rect.right + 50 and balanar.rect.left > self.rect.right:
+                if balanar.rect.left < self.rect.right + 20 and balanar.rect.left > self.rect.right:
                     self.isattacking = True
             elif self.direction == -1:
-                if balanar.rect.right > self.rect.left - 50 and balanar.rect.right < self.rect.left:
+                if balanar.rect.right > self.rect.left - 20 and balanar.rect.right < self.rect.left:
                     self.isattacking = True
                     
         #If not, move!    
@@ -326,15 +332,16 @@ class enemy(Sprite):
             self.isattacking = self.isattacking + 1
             self.state = 1
             if self.isattacking < 10:
-                self.attack_rect.width = 5*self.isattacking
+                self.attack_rect.width = 3*self.isattacking
             if self.isattacking < 5:
                 self.state = 3
             elif self.isattacking < 10:
                 self.state = 4
             elif self.isattacking < 15:
                 self.state = 5
-            if self.isattacking > 100:
+            else:
                 self.attack_rect.width = 0
+            if self.isattacking > 50:
                 self.isattacking = 0
                     
         
@@ -431,10 +438,14 @@ def move_screen_func():
             offset_count = 0
             
 def hit_enemy(enemy, balanar):        #For when an enemy hits balanar
-    pass
+    if balanar.hit_cooldown <= 0:
+        balanar.health -= 10
+        balanar.hit_cooldown = 50
+        print balanar.health
+    #print('ok')
 
 def balanar_hit(enemy):      #For when Balanar hits an enemy :P
-    if enemy.hit_cooldown == 0:
+    if enemy.hit_cooldown <= 0:
         enemy.health = enemy.health - 40
         enemy.hit_cooldown = 10
     #print ('Oh Yeah!')
@@ -549,9 +560,9 @@ def game():
     create_ground_rects(ground, current_ground_rects)
     
     enemies = []
-    for i in range (5, 16):
-        enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
-    
+    #for i in range (5, 16):
+     #   enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
+    enemies.append(enemy(screen, enemy_img_filename, (500, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
     offset_count = 0
     
     running = True
@@ -575,8 +586,9 @@ def game():
         
         #Check for collision between balanar and an enemy
         for enemy1 in enemies:
-            if enemy1.rect.colliderect(balanar.rect):
-                hit_enemy(enemy1)
+            if enemy1.attack_rect.colliderect(balanar.rect):
+                #print('hmm')
+                hit_enemy(enemy1, balanar)
         #Check for collision between balanar's attack rect and an enemy
             if enemy1.rect.colliderect(balanar.attack_rect) and balanar.isattacking:
                 balanar_hit(enemy1)
