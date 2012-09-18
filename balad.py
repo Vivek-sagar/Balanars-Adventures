@@ -1,3 +1,24 @@
+'''
+------------------------------------------------------------------------
+    Copyright (C) 2012  Vivek Vidyasagaran
+    Email : vivek.v.sagar@gmail.com
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+-------------------------------------------------------------------------
+'''
+
 #------------------------------------------------------------------------
 # Library Imports
 #------------------------------------------------------------------------
@@ -48,7 +69,7 @@ class ball(Sprite):
     
 
     def __init__(self, screen, init_position, speed):
-        """Initialise the ball"""
+        """Initialize Balanar"""
         
         Sprite.__init__(self)
         self.screen = screen
@@ -173,7 +194,7 @@ class ball(Sprite):
         #Health Considerations:        
         if self.hit_cooldown > 0:
             self.hit_cooldown = self.hit_cooldown - 1
-            self.state = 8
+            if self.hit_cooldown > 9: self.state = 8                       
         if self.health < 0:
             #Game Over!
             self.health = 0
