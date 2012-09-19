@@ -448,7 +448,7 @@ def blit_ground (screen, current_ground_rects, texture):
             screen.blit(texture, cursor)
             cursor.top += GROUND_UNIT_HEIGHT
             
-def dec_to_bin( dec):
+def dec_to_bin(dec):
     count = 0
     binary = 0
     while (dec):
@@ -466,17 +466,17 @@ def create_ground_rects(ground, current_ground_rects):                      #TOD
     global screen_offset
     
     for i in range(len(ground)):
-        ground[i] = dec_to_bin(ground[i])
+        #raw_input('')
+        temp = dec_to_bin(ground[i])
         cells = []
-        temp = ground[i]
         for j in range(8):
             cells.append(temp%10)
             temp /= 10
-        cells.append(1)
-        cells.reverse()
-        j = 1
+        cells.insert(0,1)
+        j = 0
         no_of_units = 0
-        while (j <= 9):                     # j=0 is below the screen!
+        ground_unit_top = SCREEN_HEIGHT
+        while (j <= 8):                     # j=0 is below the screen!
             if cells[j] == 1:
                 ground_unit_top = SCREEN_HEIGHT - ((j)*GROUND_UNIT_HEIGHT)
                 no_of_units += 1
@@ -484,8 +484,9 @@ def create_ground_rects(ground, current_ground_rects):                      #TOD
                 current_ground_rects.append(pygame.Rect(count*GROUND_UNIT_WIDTH-screen_offset, ground_unit_top, GROUND_UNIT_WIDTH, no_of_units*GROUND_UNIT_HEIGHT))
                 no_of_units = 0
             elif cells[j] == 0:
-                continue
-        if cells[9] == 1: 
+                pass
+            j += 1
+        if cells[8] == 1: 
             current_ground_rects.append(pygame.Rect(count*GROUND_UNIT_WIDTH-screen_offset, ground_unit_top, GROUND_UNIT_WIDTH, no_of_units*GROUND_UNIT_HEIGHT))
         count += 1
             
@@ -624,10 +625,11 @@ def game():
             ground.append(int(temp))
             temp = ''
         x = filestream.read(1)
-    
+    print ground
     #Calculates current_ground_rects so that it can be fed to enemy.init
     current_ground_rects = []    
     create_ground_rects(ground, current_ground_rects)
+    print create_ground_rects
     
     enemies = []
     #for i in range (5, 16):
