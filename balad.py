@@ -426,7 +426,18 @@ def blit_ground (screen, current_ground_rects, texture):
         while (cursor.top < rect.bottom):
             screen.blit(texture, cursor)
             cursor.top += GROUND_UNIT_HEIGHT
-         
+            
+def dec_to_bin( dec):
+    count = 0
+    binary = 0
+    while (dec):
+        rem = dec%2
+        quo = dec/2
+        binary += (10**count)*rem
+        dec /= 2
+        count += 1
+    return binary
+        
 def create_ground_rects(ground, current_ground_rects):                      #TODO: Change the way the level is stored in the file
     """Creates the actual ground object consisting of all rects"""
     #current_ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
@@ -434,14 +445,28 @@ def create_ground_rects(ground, current_ground_rects):                      #TOD
     global screen_offset
     
     for i in range(len(ground)):
-        ground_base = (ground[i] - ground[i]%100)/100
-        gap = ((ground[i]-ground_base*100) - (ground[i]-ground_base*100)%10)/10
-        cloud_size = ground[i]%10
-        current_ground_rects.append(pygame.Rect(count*GROUND_UNIT_WIDTH-screen_offset, SCREEN_HEIGHT - ground_base*GROUND_UNIT_HEIGHT, GROUND_UNIT_WIDTH, ground_base*GROUND_UNIT_HEIGHT))
-        if gap != 0:            #This unit contains a cloud
-            current_ground_rects.append(pygame.Rect(count*GROUND_UNIT_WIDTH-screen_offset, SCREEN_HEIGHT - (ground_base+gap+cloud_size)*GROUND_UNIT_HEIGHT, GROUND_UNIT_WIDTH, cloud_size*GROUND_UNIT_HEIGHT))
-        count = count+1
-            
+        ground[i] = dec_to_bin(ground[i])
+        cells = []
+        temp = ground[i]
+        for j in range(8):
+            cells.append(temp%10)
+            temp /= 10
+        cells.append(1)
+        cells.reverse()
+        j = 1
+        no_of_units = 0
+        while (j <= 9):                     # j=0 is below the screen!
+            if cells[j] == 1:
+                ground_unit_top = SCREEN_HEIGHT - ((j)*GROUND_UNIT_HEIGHT)
+                no_of_units += 1
+            elif cells[j] == 0 and cells[j-1] == 1:
+                current_ground_rects.append(pygame.Rect(count*GROUND_UNIT_WIDTH-screen_offset, ground_unit_top, GROUND_UNIT_WIDTH, no_of_units*GROUND_UNIT_HEIGHT))
+                no_of_units = 0
+            elif cells[j] == 0:
+                continue
+        if cells[9] == 1: 
+            current_ground_rects.append(pygame.Rect(count*GROUND_UNIT_WIDTH-screen_offset, ground_unit_top, GROUND_UNIT_WIDTH, no_of_units*GROUND_UNIT_HEIGHT))
+        count += 1
             
 def move_screen_func():
     """Function to pan the screen over to the next or previous screen"""
