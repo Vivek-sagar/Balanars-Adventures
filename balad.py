@@ -449,6 +449,7 @@ def blit_ground (screen, current_ground_rects, texture):
             cursor.top += GROUND_UNIT_HEIGHT
             
 def dec_to_bin(dec):
+    """Converts decimal to binary"""
     count = 0
     binary = 0
     while (dec):
@@ -458,8 +459,34 @@ def dec_to_bin(dec):
         dec /= 2
         count += 1
     return binary
+    
+def create_ground(ground):   
+    """Fills up the ground array by reading off the file
+        Right now, the entire ground is filled at once""" 
+    filestream = open('level', 'r')    
+    temp = ''
+    ground = []
+    x = filestream.read(1)
+    while x != '':
+        if (x != ';'):
+            temp = temp + x
+        else:
+            ground.append(int(temp))
+            temp = ''
+        x = filestream.read(1)
+    return ground
+    
+def create_objects(ground, enemies, screen, enemy_img_filename, current_ground_rects):
+    """Places enemies on the map based on ground"""
+    for i in range(len(ground)):
+        if ground[i] > 999:
+            obj_type = ground[i]/1000
+            ground[i] = ground[i]%1000
+            if (obj_type == 1):
+                enemies.append(enemy(screen, enemy_img_filename, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
+    return ground, enemies
         
-def create_ground_rects(ground, current_ground_rects):                      #TODO: Change the way the level is stored in the file
+def create_ground_rects(ground, current_ground_rects):
     """Creates the actual ground object consisting of all rects"""
     #current_ground_rects = [] #NOO idea why it doesnt work over here. This has been pushed to the main loop
     count = 0
@@ -508,20 +535,23 @@ def move_screen_func():
             move_screen = 0
             offset_count = 0
             
-def hit_enemy(enemy, balanar):        #For when an enemy hits balanar
+def hit_enemy(enemy, balanar):        #For when an enemy hits balanar #TODO: Is this the right way to do it ??
+    """Called when an enemy hits Balanar"""
     if balanar.hit_cooldown <= 0:
         balanar.health -= 10
         balanar.hit_cooldown = ENEMY_ATTACK_DELAY
         print balanar.health
     #print('ok')
 
-def balanar_hit(enemy):      #For when Balanar hits an enemy :P
+def balanar_hit(enemy):      #For when Balanar hits an enemy :P     #TODO: Is this the right way to do this ??
+    """Called when Balanar hits an enemy"""
     if enemy.hit_cooldown <= 0:
         enemy.health = enemy.health - 40
         enemy.hit_cooldown = 10
     #print ('Oh Yeah!')
     
 def load_sound(name):               # The only Proper Exception Handled code right now :|
+    """Function to load currently queued sound onto the mixer"""
     class NoneSound:
         def play(self): pass
     if not pygame.mixer or not pygame.mixer.get_init():
@@ -534,6 +564,7 @@ def load_sound(name):               # The only Proper Exception Handled code rig
     return sound
     
 def fill_sound_queue(chnl, drum_chnl, loops, enemies):
+    """Chooses the track to be played next according to the number of creeps on the screen right now"""
     enemy_count = 0
     for enemy in enemies:
         if (enemy.rect.left < SCREEN_WIDTH) and (enemy.rect.right > 0):
@@ -613,28 +644,20 @@ def game():
     
     balanar = ball(screen, (100,SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), (0,0))
     
-    filestream = open('level', 'r')
-    
-    temp = ''
     ground = []
-    x = filestream.read(1)
-    while x != '':
-        if (x != ';'):
-            temp = temp + x
-        else:
-            ground.append(int(temp))
-            temp = ''
-        x = filestream.read(1)
-    print ground
+    ground = create_ground(ground)                      #Why do i need to assign the function to ground ? :/
+        
     #Calculates current_ground_rects so that it can be fed to enemy.init
     current_ground_rects = []    
     create_ground_rects(ground, current_ground_rects)
-    print create_ground_rects
     
     enemies = []
+    ground, enemies = create_objects(ground, enemies, screen, enemy_img_filename, current_ground_rects)
+    
+    #enemies = []
     #for i in range (5, 16):
      #   enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
-    enemies.append(enemy(screen, enemy_img_filename, (500, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
+    #enemies.append(enemy(screen, enemy_img_filename, (500, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
     offset_count = 0
     
     running = True
@@ -644,30 +667,30 @@ def game():
     #-----------------------------The Game Loop---------------------------
     while running:
         #Delay
-        pygame.time.wait(15)
+        pygame.time.wait(15)            #66 FPS
 
         #Event Handler
-        EventHandler(balanar) #Has to return a value because move_screen is an immutable datatype and so, wont be changed in EventHandler 
-
-        #Update all objects 
+        EventHandler(balanar)
+        
         current_ground_rects = [] 
         if move_screen:
             move_screen_func()
-
+            
         create_ground_rects(ground, current_ground_rects)
         
         #Check for collision between balanar and an enemy
-        for enemy1 in enemies:
-            if enemy1.attack_rect.colliderect(balanar.rect):
+        for enemie in enemies:                              #'enemy' is the name of the class!
+            if enemie.attack_rect.colliderect(balanar.rect):
                 #print('hmm')
-                hit_enemy(enemy1, balanar)
+                hit_enemy(enemie, balanar)
         #Check for collision between balanar's attack rect and an enemy
-            if enemy1.rect.colliderect(balanar.attack_rect) and balanar.isattacking:
-                balanar_hit(enemy1)
-            
+            if enemie.rect.colliderect(balanar.attack_rect) and balanar.isattacking:
+                balanar_hit(enemie)
+        
+        #Update all objects     
         balanar.update(current_ground_rects)
-        for enemy1 in enemies:
-            enemy1.update(current_ground_rects, enemies, balanar)
+        for enemie in enemies:
+            enemie.update(current_ground_rects, enemies, balanar)
             
         #Fill sound queue if required
         fill_sound_queue(chnl, drum_chnl, loops, enemies )
@@ -677,8 +700,8 @@ def game():
 
         #Blit all objects to screen
         blit_ground(screen, current_ground_rects, texture)
-        for enemy1 in enemies:
-            enemy1.blitme(screen)
+        for enemie in enemies:
+            enemie.blitme(screen)
         balanar.blitme(screen)
 
         #Flip the display buffer
