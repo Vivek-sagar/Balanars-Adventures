@@ -28,6 +28,7 @@ from pygame.sprite import Sprite
 from random import randint, choice
 from pygame.locals import *
 import operator
+import math                 #Just for logs
 
 #------------------------------------------------------------------------
 # Global Constants
@@ -315,8 +316,8 @@ class enemy(Sprite):
         if move_screen:
             self.rect = self.rect.move(-(move_screen*SCREEN_PAN_SPEED), 0) 
             
-        if self.rect.left > SCREEN_WIDTH or self.rect.right < 0:
-            return
+        #if self.rect.left > SCREEN_WIDTH or self.rect.right < 0:
+         #   return
         
         #If Enemy is currently attacking, dont move!    
         if not self.isattacking:
@@ -482,8 +483,10 @@ def create_objects(ground, enemies, screen, enemy_img_filename, current_ground_r
         if ground[i] > 999:
             obj_type = ground[i]/1000
             ground[i] = ground[i]%1000
+            obj_height = int(math.log(ground[i], 2))
             if (obj_type == 1):
-                enemies.append(enemy(screen, enemy_img_filename, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
+                enemies.append(enemy(screen, enemy_img_filename, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT-((obj_height+1)*GROUND_UNIT_HEIGHT)), 2, current_ground_rects))
+                #pygame.draw.rect(screen, (0,0,0), (GROUND_UNIT_WIDTH*i, 200), (10,10))
     return ground, enemies
         
 def create_ground_rects(ground, current_ground_rects):
@@ -494,7 +497,8 @@ def create_ground_rects(ground, current_ground_rects):
     
     for i in range(len(ground)):
         #raw_input('')
-        temp = dec_to_bin(ground[i])
+        temp = ground[i]%1000               #To remove any objects
+        temp = dec_to_bin(temp)
         cells = []
         for j in range(8):
             cells.append(temp%10)
@@ -650,6 +654,7 @@ def game():
     #Calculates current_ground_rects so that it can be fed to enemy.init
     current_ground_rects = []    
     create_ground_rects(ground, current_ground_rects)
+    
     
     enemies = []
     ground, enemies = create_objects(ground, enemies, screen, enemy_img_filename, current_ground_rects)
