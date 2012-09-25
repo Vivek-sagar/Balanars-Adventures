@@ -195,7 +195,7 @@ class ball(Sprite):
         #Health Considerations:        
         if self.hit_cooldown > 0:
             self.hit_cooldown = self.hit_cooldown - 1
-            if self.hit_cooldown > 9: self.state = 8                       
+            if self.hit_cooldown > 30: self.state = 8                       
         if self.health < 0:
             #Game Over!
             self.health = 0
