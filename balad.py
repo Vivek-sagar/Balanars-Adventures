@@ -363,7 +363,7 @@ class enemy(Sprite):
     def blitme(self, screen):
         """Blits the enemy onto the screen"""
         self.image = self.states[self.state]
-        shift = self.image_differences[self.state]
+        (shift, shift_height) = self.image_differences[self.state]
         
         if self.direction == 1:
             self.image = pygame.transform.flip(self.image, True, False)
@@ -396,12 +396,13 @@ class enemy_type1(enemy):
                   4 : image_attack_2,
                   5 : image_attack_3}
         
-        self.image_differences = {0 : 0,
-                            1 : image_walk_2.get_width() - image_walk_1.get_width(),
-                            2 : image_walk_3.get_width() - image_walk_1.get_width(),
-                            3 : -(image_attack_1.get_width() - image_walk_1.get_width()),
-                            4 : image_attack_2.get_width() - image_walk_1.get_width(),
-                            5 : image_attack_3.get_width() - image_walk_1.get_width()}
+        self.image_differences = {
+                            0 : (0,0),
+                            1 : (image_walk_2.get_width() - image_walk_1.get_width(), 0),
+                            2 : (image_walk_3.get_width() - image_walk_1.get_width(), 0),
+                            3 : (-(image_attack_1.get_width() - image_walk_1.get_width()), 0),
+                            4 : (image_attack_2.get_width() - image_walk_1.get_width(), 0),
+                            5 : (image_attack_3.get_width() - image_walk_1.get_width(), 0)}
         
         self.rect = self.states[0].get_rect()
         self.rect = self.rect.move(init_position)
@@ -434,12 +435,13 @@ class enemy_type2(enemy):
                   4 : image_attack_2,
                   5 : image_attack_3}
         
-        self.image_differences = {0 : 0,
-                            1 : image_walk_2.get_width() - image_walk_1.get_width(),
-                            2 : image_walk_3.get_width() - image_walk_1.get_width(),
-                            3 : -(image_attack_1.get_width() - image_walk_1.get_width()),
-                            4 : image_attack_2.get_width() - image_walk_1.get_width(),
-                            5 : image_attack_3.get_width() - image_walk_1.get_width()}
+        self.image_differences = {
+                            0 : (0,0),
+                            1 : (image_walk_2.get_width() - image_walk_1.get_width(), 0),
+                            2 : (image_walk_3.get_width() - image_walk_1.get_width(), 0),
+                            3 : (-(image_attack_1.get_width() - image_walk_1.get_width()), 0),
+                            4 : (image_attack_2.get_width() - image_walk_1.get_width(), 0),
+                            5 : (image_attack_3.get_width() - image_walk_1.get_width(), 0)}
         
         self.rect = self.states[0].get_rect()
         self.rect = self.rect.move(init_position)
@@ -529,7 +531,7 @@ def create_objects(ground, enemies, screen, enemy_img_filename, current_ground_r
             ground[i] = ground[i]%1000
             obj_height = int(math.log(ground[i], 2))
             if (obj_type == 1):
-                enemies.append(enemy_type1(screen, enemy_img_filename, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT-((obj_height+1)*GROUND_UNIT_HEIGHT)), current_ground_rects))
+                enemies.append(enemy_type2(screen, enemy_img_filename, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT-((obj_height+1)*GROUND_UNIT_HEIGHT)), current_ground_rects))
                 #pygame.draw.rect(screen, (0,0,0), (GROUND_UNIT_WIDTH*i, 200), (10,10))
     return ground, enemies
         
