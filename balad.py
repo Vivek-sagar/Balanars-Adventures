@@ -263,52 +263,9 @@ class ball(Sprite):
 #-----------------------Enemy---------------------------------------------
         
 class enemy(Sprite):
-
-    def __init__(self, screen, img_filename, init_position, speed, ground_rects):
+    def __init__(self):
         """Initialiser for all enemies"""        
-        self.screen = screen
-        self.position = init_position
-        #self.image =  pygame.image.load(img_filename).convert()
-        
-        self.speed = speed
-        self.direction = -1
-        self.health = 100 
-        #self.image.set_colorkey((255, 255, 255))     
-        self.hit_cooldown = 0
-        self.isattacking = 0
-        
-        self.image_change_threshold = 0
-        image_walk_1 = pygame.image.load("images/BaladSprites/axeguy1.png")
-        image_walk_2 = pygame.image.load("images/BaladSprites/axeguy3.png")
-        image_walk_3 = pygame.image.load("images/BaladSprites/axeguy4.png")
-        image_attack_1 = pygame.image.load("images/BaladSprites/axeguyattack1.png")
-        image_attack_2 = pygame.image.load("images/BaladSprites/axeguyattack2.png")
-        image_attack_3 = pygame.image.load("images/BaladSprites/axeguyattack3.png")
-        
-        self.states = {0 : image_walk_1, 
-                  1 : image_walk_2, 
-                  2 : image_walk_3,
-                  3 : image_attack_1,
-                  4 : image_attack_2,
-                  5 : image_attack_3}
-        self.state = 0
-        
-        self.image_differences = {0 : 0,
-                            1 : image_walk_2.get_width() - image_walk_1.get_width(),
-                            2 : image_walk_3.get_width() - image_walk_1.get_width(),
-                            3 : -(image_attack_1.get_width() - image_walk_1.get_width()),
-                            4 : image_attack_2.get_width() - image_walk_1.get_width(),
-                            5 : image_attack_3.get_width() - image_walk_1.get_width()}
-        
-        self.rect = self.states[0].get_rect()
-        self.rect = self.rect.move(init_position)
-        self.attack_rect = pygame.Rect(0,0,0,0)
-        self.attack_rect.h = self.rect.h
-        
-        #Lifts the enemy onto ground level
-        for rects in ground_rects:
-            if self.rect.colliderect(rects):
-                self.rect.bottom = rects.top
+        Sprite.__init__(self)
         
     def update(self, ground_rects, enemies, balanar):
         """Updates enemy position, checking for obstacles and allowing for screen panning""" 
@@ -406,6 +363,56 @@ class enemy(Sprite):
         #pygame.draw.rect(screen, (0,0,0), self.attack_rect)
         pygame.draw.rect(screen, HEALTH_BAR_COLOUR, pygame.Rect(self.rect.left, self.rect.top-20, self.rect.width*(self.health/100.0), 10))
         
+class enemy_type1(enemy):
+    def __init__(self, screen, img_filename, init_position, speed, ground_rects):
+        """Initialiser for all enemies"""      
+        enemy.__init__(self)  
+        self.screen = screen
+        self.position = init_position
+        #self.image =  pygame.image.load(img_filename).convert()
+        
+        self.speed = speed
+        self.direction = -1
+        self.health = 100 
+        #self.image.set_colorkey((255, 255, 255))     
+        self.hit_cooldown = 0
+        self.isattacking = 0
+        
+        self.image_change_threshold = 0
+        image_walk_1 = pygame.image.load("images/BaladSprites/axeguy1.png")
+        image_walk_2 = pygame.image.load("images/BaladSprites/axeguy3.png")
+        image_walk_3 = pygame.image.load("images/BaladSprites/axeguy4.png")
+        image_attack_1 = pygame.image.load("images/BaladSprites/axeguyattack1.png")
+        image_attack_2 = pygame.image.load("images/BaladSprites/axeguyattack2.png")
+        image_attack_3 = pygame.image.load("images/BaladSprites/axeguyattack3.png")
+        
+        self.states = {0 : image_walk_1, 
+                  1 : image_walk_2, 
+                  2 : image_walk_3,
+                  3 : image_attack_1,
+                  4 : image_attack_2,
+                  5 : image_attack_3}
+        self.state = 0
+        
+        self.image_differences = {0 : 0,
+                            1 : image_walk_2.get_width() - image_walk_1.get_width(),
+                            2 : image_walk_3.get_width() - image_walk_1.get_width(),
+                            3 : -(image_attack_1.get_width() - image_walk_1.get_width()),
+                            4 : image_attack_2.get_width() - image_walk_1.get_width(),
+                            5 : image_attack_3.get_width() - image_walk_1.get_width()}
+        
+        self.rect = self.states[0].get_rect()
+        self.rect = self.rect.move(init_position)
+        self.attack_rect = pygame.Rect(0,0,0,0)
+        self.attack_rect.h = self.rect.h
+        
+        #Lifts the enemy onto ground level
+        for rects in ground_rects:
+            if self.rect.colliderect(rects):
+                self.rect.bottom = rects.top
+            
+    
+
 
 #-------------------------------------------------------------------------
 # Event Handler
@@ -485,7 +492,7 @@ def create_objects(ground, enemies, screen, enemy_img_filename, current_ground_r
             ground[i] = ground[i]%1000
             obj_height = int(math.log(ground[i], 2))
             if (obj_type == 1):
-                enemies.append(enemy(screen, enemy_img_filename, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT-((obj_height+1)*GROUND_UNIT_HEIGHT)), 2, current_ground_rects))
+                enemies.append(enemy_type1(screen, enemy_img_filename, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT-((obj_height+1)*GROUND_UNIT_HEIGHT)), 2, current_ground_rects))
                 #pygame.draw.rect(screen, (0,0,0), (GROUND_UNIT_WIDTH*i, 200), (10,10))
     return ground, enemies
         
