@@ -28,7 +28,7 @@ from pygame.sprite import Sprite
 from random import randint, choice
 from pygame.locals import *
 import operator
-import math                 #Just for logs
+import math                 #Just for logarithms
 
 #------------------------------------------------------------------------
 # Global Constants
@@ -532,7 +532,8 @@ def create_objects(ground, enemies, screen, enemy_img_filename, current_ground_r
             obj_height = int(math.log(ground[i], 2))
             if (obj_type == 1):
                 enemies.append(enemy_type1(screen, enemy_img_filename, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT-((obj_height+1)*GROUND_UNIT_HEIGHT)), current_ground_rects))
-                #pygame.draw.rect(screen, (0,0,0), (GROUND_UNIT_WIDTH*i, 200), (10,10))
+            elif (obj_type == 2):
+                enemies.append(enemy_type2(screen, enemy_img_filename, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT-((obj_height+1)*GROUND_UNIT_HEIGHT)), current_ground_rects))
     return ground, enemies
         
 def create_ground_rects(ground, current_ground_rects):
@@ -585,7 +586,7 @@ def move_screen_func():
             move_screen = 0
             offset_count = 0
             
-def hit_enemy(enemy, balanar):        #For when an enemy hits balanar #TODO: Is this the right way to do it ??
+def hit_enemy(enemy, balanar):        #For when an enemy hits balanar #TODO: Is this the right way to do it ?? no :|
     """Called when an enemy hits Balanar"""
     if balanar.hit_cooldown <= 0:
         balanar.health -= 10
@@ -593,7 +594,7 @@ def hit_enemy(enemy, balanar):        #For when an enemy hits balanar #TODO: Is 
         print balanar.health
     #print('ok')
 
-def balanar_hit(enemy):      #For when Balanar hits an enemy :P     #TODO: Is this the right way to do this ??
+def balanar_hit(enemy):      #For when Balanar hits an enemy :P     #TODO: Is this the right way to do this ?? no :|
     """Called when Balanar hits an enemy"""
     if enemy.hit_cooldown <= 0:
         enemy.health = enemy.health - 40
@@ -718,7 +719,7 @@ def game():
     #-----------------------------The Game Loop---------------------------
     while running:
         #Delay
-        pygame.time.wait(150)            #66 FPS
+        pygame.time.wait(15)            #66 FPS
 
         #Event Handler
         EventHandler(balanar)
