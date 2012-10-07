@@ -42,13 +42,13 @@ HEALTH_BAR_COLOUR = (200, 255, 100)
 ENEMY_ATTACK_REACH = 30     #Number of pixels the enemy can reach. Don't set below 15
 ENEMY_ATTACK_DELAY = 50     #Number of cycles before enemy attacks again.
 
-MOVEMENT_SPEED_INCREMENT = 0.5
-BALANAR_MAX_SPEED = 3
+MOVEMENT_SPEED_INCREMENT = 1
+BALANAR_MAX_SPEED = 10
 BALANAR_JUMP_SPEED = 15
 BALANAR_GRAVITY = 1.0
 SCREEN_PAN_SPEED = 30
 SCREEN_PAN_ZONE = 10
-MAX_SCREEN_OFFSET = 3000     #Changes whenever the number of blocks in level is changed
+MAX_SCREEN_OFFSET = 8100     #Changes whenever the number of blocks in level is changed
 
 BALANAR_IMAGE_CHANGE_THRESHOLD = 20
 
@@ -117,6 +117,9 @@ class ball(Sprite):
                             6 : image_jump.get_width() - image_walk_1.get_width(),
                             7 : image_red.get_width() - image_walk_1.get_width()}
         self.state = 0
+        
+        self.coll_points = 0
+        
     def update(self, current_ground_rects):
         """Updates ball position. Checks for obstacles, causes jumping and allows for falling off edges"""
         
@@ -260,6 +263,42 @@ class ball(Sprite):
         #pygame.draw.rect(screen, (0,0,0), self.rect)              
         #pygame.draw.rect(screen, (0,0,0), self.attack_rect)
         
+
+
+class collectable(Sprite):
+    def __init__(self, screen, init_position, img, ground_rects):
+        """Initialiser for all enemies"""        
+        Sprite.__init__(self)
+        
+        self.screen = screen
+        self.position = init_position
+        self.image = img
+        self.rect = self.image.get_rect()
+        self.jump_count = 1
+        self.direction = 1
+        self.rect = self.rect.move(self.position)
+        #Lifts the collectable onto ground level
+        for rects in ground_rects:
+            if self.rect.colliderect(rects):
+                self.rect.bottom = rects.top
+        
+    def update(self):
+        self.jump_count+=(self.direction*1)
+        if self.jump_count >= 10 or self.jump_count <= 1 : self.direction = -self.direction
+        
+        if move_screen:
+            self.rect = self.rect.move(-(move_screen*SCREEN_PAN_SPEED), 0) 
+        
+    def check(self, balanar):
+        if self.rect.colliderect(balanar):
+            return 1
+        else:
+            return 0
+            
+    def blitme(self):
+        self.screen.blit(self.image, (self.rect.left, self.rect.top-5*(10/self.jump_count)))
+
+
 #-----------------------Enemy---------------------------------------------
         
 class enemy(Sprite):
@@ -452,6 +491,8 @@ class enemy_type2(enemy):
         for rects in ground_rects:
             if self.rect.colliderect(rects):
                 self.rect.bottom = rects.top
+                
+
 
 #-------------------------------------------------------------------------
 # Event Handler
@@ -523,7 +564,7 @@ def create_ground(ground):
         x = filestream.read(1)
     return ground
     
-def create_objects(ground, enemies, screen, enemy_img_filename, current_ground_rects):
+def create_objects(ground, enemies, collectables, screen, enemy_img_filename, coll_img, current_ground_rects):
     """Places enemies on the map based on ground"""
     for i in range(len(ground)):
         if ground[i] > 999:
@@ -534,6 +575,8 @@ def create_objects(ground, enemies, screen, enemy_img_filename, current_ground_r
                 enemies.append(enemy_type1(screen, enemy_img_filename, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT-((obj_height+1)*GROUND_UNIT_HEIGHT)), current_ground_rects))
             elif (obj_type == 2):
                 enemies.append(enemy_type2(screen, enemy_img_filename, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT-((obj_height+1)*GROUND_UNIT_HEIGHT)), current_ground_rects))
+            elif obj_type == 3:
+                collectables.append(collectable(screen, (GROUND_UNIT_WIDTH*i, SCREEN_HEIGHT), coll_img, current_ground_rects))
     return ground, enemies
         
 def create_ground_rects(ground, current_ground_rects):
@@ -651,6 +694,7 @@ def game():
     drum_track_1 = "sounds/drumtrack1.ogg"
     drum_track_2 = "sounds/drumtrack2.ogg"
     texture = pygame.image.load("images/BaladSprites/stone_texture.png")
+    coll_img = pygame.image.load("images/BaladSprites/shield1.png")
     
 
     pygame.init()
@@ -704,7 +748,8 @@ def game():
     
     
     enemies = []
-    ground, enemies = create_objects(ground, enemies, screen, enemy_img_filename, current_ground_rects)
+    collectables = []
+    ground, enemies = create_objects(ground, enemies, collectables, screen, enemy_img_filename, coll_img, current_ground_rects)
     
     #enemies = []
     #for i in range (5, 16):
@@ -713,8 +758,6 @@ def game():
     offset_count = 0
     
     running = True
-    
-     
 
     #-----------------------------The Game Loop---------------------------
     while running:
@@ -743,6 +786,14 @@ def game():
         balanar.update(current_ground_rects)
         for enemie in enemies:
             enemie.update(current_ground_rects, enemies, balanar)
+        for coll in collectables:
+            coll.update()
+            
+            
+        for coll in collectables:
+            if  coll.check(balanar):
+                collectables.remove(coll)
+                balanar.coll_points += 1
             
         #Fill sound queue if required
         fill_sound_queue(chnl, drum_chnl, loops, enemies )
@@ -755,7 +806,8 @@ def game():
         for enemie in enemies:
             enemie.blitme(screen)
         balanar.blitme(screen)
-
+        for coll in collectables:
+            coll.blitme()
         #Flip the display buffer
         pygame.display.flip()
         
