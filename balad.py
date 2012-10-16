@@ -34,6 +34,7 @@ import math                 #Just for logarithms
 # Global Constants
 #------------------------------------------------------------------------
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 400
+MOTIME = 15                 #Delay in ms between each frame
 BG_COLOUR = 200, 200, 200
 GROUND_UNIT_WIDTH, GROUND_UNIT_HEIGHT = 80, 50
 GROUND_COLOUR = (50, 25, 25)
@@ -42,8 +43,8 @@ HEALTH_BAR_COLOUR = (200, 255, 100)
 ENEMY_ATTACK_REACH = 30     #Number of pixels the enemy can reach. Don't set below 15
 ENEMY_ATTACK_DELAY = 50     #Number of cycles before enemy attacks again.
 
-MOVEMENT_SPEED_INCREMENT = 1
-BALANAR_MAX_SPEED = 10
+MOVEMENT_SPEED_INCREMENT = 0.5
+BALANAR_MAX_SPEED = 5
 BALANAR_JUMP_SPEED = 15
 BALANAR_GRAVITY = 1.0
 SCREEN_PAN_SPEED = 30
@@ -99,7 +100,7 @@ class ball(Sprite):
         self.hit_cooldown = 0
         self.image_change_threshold = 0
         self.direction = 1
-        self.health = 100
+        self.health = 70
         self.states = {0 : image_walk_1, 
                        1 : image_walk_2, 
                        2 : image_walk_3,
@@ -492,14 +493,68 @@ class enemy_type2(enemy):
             if self.rect.colliderect(rects):
                 self.rect.bottom = rects.top
                 
+class hud_class():
 
-
+    def __init__(self):
+        '''Initialises the images and variables for the HUD'''
+        
+        self.hearts = 6
+        self.health_image = pygame.image.load("images/BaladSprites/health.png")
+        self.full_heart = pygame.image.load("images/BaladSprites/fullheart.png")
+        self.half_heart = pygame.image.load("images/BaladSprites/halfheart.png")
+        self.no_heart = pygame.image.load("images/BaladSprites/noheart.png")
+        
+    def update(self, balanar):
+        '''Performs HUD update operations. Only health for now'''
+        
+        if balanar.health > 60:
+            self.hearts = 6
+        elif balanar.health > 50:
+            self.hearts = 5
+        elif balanar.health > 40:
+            self.hearts = 4
+        elif balanar.health > 30:
+            self.hearts = 3
+        elif balanar.health > 20:
+            self.hearts = 2    
+        elif balanar.health > 10:
+            self.hearts = 1
+        else:
+            self.hearts = 0
+            
+    def blitme(self, screen):
+        '''Blits the word 'HEALTH' and hearts onto the screen'''
+        
+        screen.blit(self.health_image, (SCREEN_WIDTH - self.health_image.get_width() - 3*self.full_heart.get_width()-100, 10))
+        
+        if self.hearts/2 > 0:
+            screen.blit(self.full_heart, (SCREEN_WIDTH + 10 -3*self.full_heart.get_width()-100, 10))
+        elif self.hearts == 1:
+            screen.blit(self.half_heart, (SCREEN_WIDTH + 10 -3*self.half_heart.get_width()-100, 10))
+        elif self.hearts == 0:
+            screen.blit(self.no_heart, (SCREEN_WIDTH + 10 -3*self.no_heart.get_width()-100, 10))
+            
+        if self.hearts/2 > 1:
+            screen.blit(self.full_heart, (SCREEN_WIDTH + 20 -2*self.full_heart.get_width()-100, 10))
+        elif self.hearts == 3:
+            screen.blit(self.half_heart, (SCREEN_WIDTH + 20 -2*self.half_heart.get_width()-100, 10))
+        else:
+            screen.blit(self.no_heart, (SCREEN_WIDTH + 20 -2*self.no_heart.get_width()-100, 10))
+        
+        if self.hearts/2 > 2:
+            screen.blit(self.full_heart, (SCREEN_WIDTH + 30 -1*self.full_heart.get_width()-100, 10))
+        elif self.hearts == 5:
+            screen.blit(self.half_heart, (SCREEN_WIDTH + 30 -1*self.half_heart.get_width()-100, 10))
+        else:
+            screen.blit(self.no_heart, (SCREEN_WIDTH + 30 -1*self.no_heart.get_width()-100, 10))
+            
 #-------------------------------------------------------------------------
 # Event Handler
 #-------------------------------------------------------------------------
 def EventHandler(balanar):
     """Keyboard input handler"""
     global move_screen
+    global MOTIME
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -508,12 +563,23 @@ def EventHandler(balanar):
         if event.type == KEYDOWN:
             if event.key == K_q:
                 pygame.quit()
+            elif event.key == K_s:
+                if MOTIME == 15:
+                    MOTIME = 150
+                else:
+                    MOTIME = 15
+            elif event.key == K_f:
+                if MOTIME == 15:
+                    MOTIME = 5
+                else:
+                    MOTIME = 15
             elif event.key == K_LEFT:
                 balanar.movement_force = -1
             elif event.key == K_RIGHT:
                 balanar.movement_force = 1
             elif event.key == K_DOWN:
-                balanar.isattacking = 1
+                if balanar.isattacking == 0:
+                    balanar.isattacking = 1
             elif event.key == K_UP:
                 balanar.isjumping = True
                 
@@ -755,6 +821,8 @@ def game():
     #for i in range (5, 16):
      #   enemies.append(enemy(screen, enemy_img_filename, (i*100, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
     #enemies.append(enemy(screen, enemy_img_filename, (500, SCREEN_HEIGHT-GROUND_UNIT_HEIGHT), 2, current_ground_rects))
+    
+    hud = hud_class()
     offset_count = 0
     
     running = True
@@ -762,7 +830,7 @@ def game():
     #-----------------------------The Game Loop---------------------------
     while running:
         #Delay
-        pygame.time.wait(15)            #66 FPS
+        pygame.time.wait(MOTIME)            #66 FPS
 
         #Event Handler
         EventHandler(balanar)
@@ -789,6 +857,8 @@ def game():
         for coll in collectables:
             coll.update()
             
+        hud.update(balanar)
+            
             
         for coll in collectables:
             if  coll.check(balanar):
@@ -805,9 +875,12 @@ def game():
         blit_ground(screen, current_ground_rects, texture)
         for enemie in enemies:
             enemie.blitme(screen)
+            
         balanar.blitme(screen)
         for coll in collectables:
             coll.blitme()
+        hud.blitme(screen)    
+            
         #Flip the display buffer
         pygame.display.flip()
         
