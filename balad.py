@@ -740,6 +740,48 @@ def fill_sound_queue(chnl, drum_chnl, loops, enemies):
     else:
         chnl.queue(loops[0])
         drum_chnl.queue(loops[0])
+ 
+def main_menu(screen):
+    
+    image_start = pygame.image.load("images/start2.jpg") 
+    image_quit = pygame.image.load("images/quit3.jpg") 
+    image_cursor = pygame.image.load("images/BaladSprites/cursor.png")
+    
+    start_rect = image_start.get_rect()
+    quit_rect = image_quit.get_rect()
+    cursor_rect = image_cursor.get_rect()
+    
+    start_rect.topleft = (((SCREEN_WIDTH-start_rect.width)/2), 50)
+    quit_rect.topleft = (((SCREEN_WIDTH-quit_rect.width)/2), 200) 
+    
+    pygame.mouse.set_visible(False)
+    
+    mouse_x, mouse_y = 0,0
+    while (True):
+        pygame.time.wait(MOTIME)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == KEYDOWN:
+                if event.key == K_q:
+                    pygame.quit()
+            elif event.type == MOUSEMOTION:
+                mouse_x, mouse_y = event.pos
+            elif event.type == MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = event.pos
+                if event.button == 1:
+                    if start_rect.collidepoint(event.pos):
+                        return
+                    elif quit_rect.collidepoint(event.pos):
+                        exit()
+        cursor_rect.topleft = (mouse_x, mouse_y)                
+            
+        screen.fill((255,255,255) ) 
+        screen.blit(image_quit, quit_rect)  
+        screen.blit(image_start, start_rect)        
+        screen.blit(image_cursor, cursor_rect)
+        pygame.display.flip()
         
 #-------------------------------------------------------------------------
 # Game Loop
@@ -766,6 +808,8 @@ def game():
     screen = pygame.display.set_mode ((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
  
     clock = pygame.time.Clock()
+    
+    main_menu(screen)
     
     global move_screen
     global offset_count
@@ -883,5 +927,5 @@ def game():
         pygame.display.flip()
         
     filestream.close
-
+    
 game()
